@@ -12,7 +12,7 @@
     "api_key": {
       "title": "API Key",
       "type": "string",
-      "required": true,
+      "required": false,
       "x-schema-form": {
         "type": "password"
       }
