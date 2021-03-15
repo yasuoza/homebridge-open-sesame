@@ -1,0 +1,40 @@
+{
+  "pluginAlias": "OpenSesame",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "name": {
+      "type": "string",
+      "title": "Name",
+      "default": "Open Sesame",
+      "required": true
+    },
+    "api_key": {
+      "title": "API Key",
+      "type": "string",
+      "required": true,
+      "x-schema-form": {
+        "type": "password"
+      }
+    },
+    "locks": {
+      "title": "Sesame Locks",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "uuid": {
+            "title": "UUID",
+            "description": "UUID can be found at Sesame app.",
+            "type": "string",
+            "required": true
+          }
+        }
+      }
+    }
+  }
+}

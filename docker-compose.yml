@@ -1,0 +1,15 @@
+version: '2'
+services:
+  homebridge:
+    image: oznu/homebridge:ubuntu
+    environment:
+      - HOMEBRIDGE_CONFIG_UI=1
+      - HOMEBRIDGE_CONFIG_UI_PORT=8581
+    ports:
+      - 8581:8581
+    volumes:
+      - ./homebridge:/homebridge
+      # Development volumes
+      - ./dist:/homebridge/homebridge-open-sesame/dist
+      - ./package.json:/homebridge/homebridge-open-sesame/package.json
+      - ./config.schema.json:/homebridge/homebridge-open-sesame/config.schema.json
