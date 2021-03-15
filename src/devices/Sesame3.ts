@@ -40,6 +40,12 @@ export class Sesame3 {
       .getCharacteristic(this.platform.Characteristic.LockTargetState)
       .onGet(this.getLockState.bind(this))
       .onSet(this.setLockTargetState.bind(this));
+
+    const battery =
+      this.accessory.getService(this.platform.Service.Battery) ??
+      this.accessory.addService(this.platform.Service.Battery);
+    battery.getCharacteristic(this.platform.Characteristic.BatteryLevel).onGet(this.getBatteryLevel.bind(this));
+    battery.getCharacteristic(this.platform.Characteristic.StatusLowBattery).onGet(this.getStatusLowBattery.bind(this));
   }
 
   async getLockState(): Promise<CharacteristicValue> {
@@ -76,5 +82,28 @@ export class Sesame3 {
       this.lockService.getCharacteristic(this.platform.Characteristic.LockCurrentState).updateValue(lockState);
       this.lockService.getCharacteristic(this.platform.Characteristic.LockTargetState).updateValue(lockState);
     }, 1000);
+  }
+
+  async getBatteryLevel(): Promise<CharacteristicValue> {
+    const release = await this.mutex.acquire();
+    try {
+      const shadow = await this.client.getShadow(this.sesame.uuid);
+      return shadow.batteryPercentage;
+    } finally {
+      release();
+    }
+  }
+
+  async getStatusLowBattery(): Promise<CharacteristicValue> {
+    const release = await this.mutex.acquire();
+    try {
+      const shadow = await this.client.getShadow(this.sesame.uuid);
+      if (shadow.batteryPercentage < 20) {
+        return this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW;
+      }
+      return this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+    } finally {
+      release();
+    }
   }
 }
