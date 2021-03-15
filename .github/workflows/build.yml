@@ -1,6 +1,11 @@
 name: Build and Lint
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - '*'
+      - '!dependabot/**'
+  pull_request_target:
 
 jobs:
   build:
