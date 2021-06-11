@@ -4,4 +4,7 @@ module.exports = {
   trailingComma: "all",
   importOrder: ["^@core/(.*)$", "^[./]"],
   importOrderSeparation: true,
+  experimentalBabelParserPluginsList: [
+    "classPrivateProperties",
+  ]
 };
