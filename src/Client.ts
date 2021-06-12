@@ -48,7 +48,7 @@ export class Client {
   }
 
   // https://doc.candyhouse.co/ja/SesameAPI
-  private generateRandomTag(secret: string) {
+  private generateRandomTag(secret: string): string {
     // * key:key-secret_hex to data
     const key = Buffer.from(secret, "hex");
 
