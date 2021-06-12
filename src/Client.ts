@@ -3,6 +3,7 @@ import { Logger } from "homebridge";
 import { aesCmac } from "node-aes-cmac";
 
 import { Sesame2Shadow } from "./types/API";
+import { SesameLock } from "./types/Device";
 
 const API_BASE_URL = "https://app.candyhouse.co/api/sesame2";
 
@@ -22,23 +23,23 @@ export class Client {
     });
   }
 
-  async getShadow(uuid: string): Promise<Sesame2Shadow> {
-    this.log.debug(`GET /api/sesame2/${uuid}`);
+  async getShadow(sesame: SesameLock): Promise<Sesame2Shadow> {
+    this.log.debug(`GET /api/sesame2/${sesame.uuid}`);
 
-    const res = await this.#instance.get(`/${uuid}`);
+    const res = await this.#instance.get(`/${sesame.uuid}`);
     return res.data as Sesame2Shadow;
   }
 
-  async postCmd(uuid: string, cmd: Command): Promise<boolean> {
-    this.log.debug(`POST /api/sesame2/${uuid}/cmd`);
+  async postCmd(sesame: SesameLock, cmd: Command): Promise<boolean> {
+    this.log.debug(`POST /api/sesame2/${sesame.uuid}/cmd`);
 
-    const key_secret_hex = "a13d4b890111676ba8fb36ece7e94f7d";
+    const key_secret_hex = sesame.secret;
     const base64_history = Buffer.from("homebridge-open-sesame").toString(
       "base64",
     );
     const sign = this.generateRandomTag(key_secret_hex);
 
-    const res = await this.#instance.post(`/${uuid}/cmd`, {
+    const res = await this.#instance.post(`/${sesame.uuid}/cmd`, {
       cmd: cmd,
       history: base64_history,
       sign: sign,

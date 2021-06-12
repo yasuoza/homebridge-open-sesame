@@ -32,6 +32,15 @@
             "description": "UUID can be found at Sesame app.",
             "type": "string",
             "required": true
+          },
+          "secret": {
+            "title": "KEY Secret",
+            "description": "Key Secret. Can be retreived at https://sesame-qr-reader.vercel.app",
+            "type": "string",
+            "required": true,
+            "x-schema-form": {
+              "type": "password"
+            }
           }
         }
       }

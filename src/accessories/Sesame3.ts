@@ -87,7 +87,7 @@ export class Sesame3 {
 
     try {
       await this.#mutex.runExclusive(async () => {
-        await this.#client.postCmd(this.sesame.uuid, cmd);
+        await this.#client.postCmd(this.sesame, cmd);
 
         // Update state
         this.#lockState = value;
@@ -136,6 +136,6 @@ export class Sesame3 {
   }
 
   private async fetchSesameShadow(): Promise<Sesame2Shadow> {
-    return await this.#client.getShadow(this.sesame.uuid);
+    return await this.#client.getShadow(this.sesame);
   }
 }
