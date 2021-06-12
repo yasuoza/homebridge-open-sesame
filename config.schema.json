@@ -35,6 +35,14 @@
           }
         }
       }
+    },
+    "update_interval": {
+      "title": "Status update interval second",
+      "type": "integer",
+      "required": true,
+      "default": 60,
+      "minimum": 10,
+      "maximum": 600
     }
   }
 }

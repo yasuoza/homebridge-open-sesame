@@ -1,5 +1,6 @@
 import {
   API,
+  APIEvent,
   DynamicPlatformPlugin,
   Logger,
   PlatformAccessory,
@@ -17,6 +18,11 @@ export class OpenSesame implements DynamicPlatformPlugin {
 
   public readonly accessories: PlatformAccessory[] = [];
 
+  // Status update interval
+  get updateInterval(): number {
+    return this.config?.updateInterval ?? 60;
+  }
+
   constructor(public readonly log: Logger, public readonly config: PlatformConfig, public readonly api: API) {
     this.log.debug("Finished initializing platform:", this.config.name);
 
@@ -25,10 +31,10 @@ export class OpenSesame implements DynamicPlatformPlugin {
       return;
     }
 
-    this.api.on("didFinishLaunching", () => {
+    this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
       this.log.debug("Executed didFinishLaunching callback");
 
-      this.discoverLocks();
+      this.initializeSesameLocks();
     });
   }
 
@@ -54,8 +60,9 @@ export class OpenSesame implements DynamicPlatformPlugin {
     this.accessories.push(accessory);
   }
 
-  discoverLocks() {
+  initializeSesameLocks() {
     const sesameLocks: [SesameLock] = this.config.locks;
+
     for (const sesame of sesameLocks) {
       const uuid = this.api.hap.uuid.generate(sesame.uuid);
       const existingAccessory = this.accessories.find((accessory) => accessory.UUID === uuid);
