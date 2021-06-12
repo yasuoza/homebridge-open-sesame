@@ -87,7 +87,7 @@ export class Sesame3 {
 
     try {
       await this.#mutex.runExclusive(async () => {
-        await this.#client.postCmd(this.sesame, cmd);
+        await this.#client.postCmd(this.sesame, cmd, this.platform.config.name);
 
         // Update state
         this.#lockState = value;

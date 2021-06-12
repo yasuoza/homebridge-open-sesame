@@ -30,13 +30,16 @@ export class Client {
     return res.data as Sesame2Shadow;
   }
 
-  async postCmd(sesame: SesameLock, cmd: Command): Promise<boolean> {
+  async postCmd(
+    sesame: SesameLock,
+    cmd: Command,
+    historyName?: string,
+  ): Promise<boolean> {
     this.log.debug(`POST /api/sesame2/${sesame.uuid}/cmd`);
 
     const key_secret_hex = sesame.secret;
-    const base64_history = Buffer.from("homebridge-open-sesame").toString(
-      "base64",
-    );
+    const history = historyName ?? "Homebridge";
+    const base64_history = Buffer.from(history).toString("base64");
     const sign = this.generateRandomTag(key_secret_hex);
 
     const res = await this.#instance.post(`/${sesame.uuid}/cmd`, {
