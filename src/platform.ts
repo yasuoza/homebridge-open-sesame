@@ -22,7 +22,7 @@ export class OpenSesame implements DynamicPlatformPlugin {
 
   // Status update interval
   get updateInterval(): number {
-    return this.config?.updateInterval ?? 60;
+    return this.config.updateInterval ?? 60;
   }
 
   constructor(

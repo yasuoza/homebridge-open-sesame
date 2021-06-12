@@ -12,7 +12,6 @@ export class Sesame3 {
   #mutex: Mutex;
 
   #lockService: Service;
-
   #lockState: number;
   #batteryLevel: number;
 
@@ -21,63 +20,49 @@ export class Sesame3 {
     private readonly accessory: PlatformAccessory,
     private readonly sesame: SesameLock,
   ) {
-    this.#client = new Client(platform.config.apiKey, this.platform.log);
+    this.#client = new Client(platform.config.apiKey, platform.log);
     this.#mutex = new Mutex();
 
     this.accessory
-      .getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(
-        this.platform.Characteristic.Manufacturer,
-        PLATFORM_NAME,
-      )
-      .setCharacteristic(this.platform.Characteristic.Model, "Sesame3")
-      .setCharacteristic(
-        this.platform.Characteristic.SerialNumber,
-        this.sesame.uuid,
-      );
+      .getService(platform.Service.AccessoryInformation)!
+      .setCharacteristic(platform.Characteristic.Manufacturer, PLATFORM_NAME)
+      .setCharacteristic(platform.Characteristic.Model, "Sesame3")
+      .setCharacteristic(platform.Characteristic.SerialNumber, sesame.uuid);
 
     this.#lockService =
-      this.accessory.getService(this.platform.Service.LockMechanism) ??
-      this.accessory.addService(this.platform.Service.LockMechanism);
+      this.accessory.getService(platform.Service.LockMechanism) ??
+      this.accessory.addService(platform.Service.LockMechanism);
 
     const name = this.sesame.name ?? this.sesame.uuid;
-    this.#lockService.setCharacteristic(
-      this.platform.Characteristic.Name,
-      name,
-    );
+    this.#lockService.setCharacteristic(platform.Characteristic.Name, name);
 
     this.#lockService
-      .getCharacteristic(this.platform.Characteristic.LockCurrentState)
+      .getCharacteristic(platform.Characteristic.LockCurrentState)
       .onGet(this.getLockState.bind(this));
 
     this.#lockService
-      .getCharacteristic(this.platform.Characteristic.LockTargetState)
+      .getCharacteristic(platform.Characteristic.LockTargetState)
       .onGet(this.getLockState.bind(this))
       .onSet(this.setLockTargetState.bind(this));
 
     const battery =
-      this.accessory.getService(this.platform.Service.Battery) ??
-      this.accessory.addService(this.platform.Service.Battery);
+      this.accessory.getService(platform.Service.Battery) ??
+      this.accessory.addService(platform.Service.Battery);
     battery
-      .getCharacteristic(this.platform.Characteristic.BatteryLevel)
+      .getCharacteristic(platform.Characteristic.BatteryLevel)
       .onGet(this.getBatteryLevel.bind(this));
     battery
-      .getCharacteristic(this.platform.Characteristic.StatusLowBattery)
+      .getCharacteristic(platform.Characteristic.StatusLowBattery)
       .onGet(this.getStatusLowBattery.bind(this));
 
     // Start updating status
+    this.updateStatus();
     setInterval(async () => {
-      if (this.#mutex.isLocked()) {
-        return;
-      }
-
-      await this.#mutex.runExclusive(async () => {
-        await this.updateStatus();
-      });
-    }, this.platform.updateInterval);
+      await this.updateStatus();
+    }, platform.config.updateInterval * 1000);
 
     // Initialize accessory characteristics
-    this.#lockState = this.platform.Characteristic.LockCurrentState.UNKNOWN;
+    this.#lockState = platform.Characteristic.LockCurrentState.UNKNOWN;
     this.#batteryLevel = 100;
   }
 
@@ -128,30 +113,29 @@ export class Sesame3 {
     return this.#batteryLevel < 20;
   }
 
-  async updateStatus(): Promise<void> {
-    const shadow = await this.fetchSesameShadow();
+  private async updateStatus(): Promise<void> {
+    return await this.#mutex.runExclusive(async () => {
+      const shadow = await this.fetchSesameShadow();
 
-    let lockState: CharacteristicValue;
-    switch (shadow.CHSesame2Status) {
-      case "locked":
-        lockState = this.platform.Characteristic.LockCurrentState.SECURED;
-        break;
-      case "unlocked":
-        lockState = this.platform.Characteristic.LockCurrentState.UNSECURED;
-        break;
-      default:
-        lockState = this.platform.Characteristic.LockCurrentState.UNKNOWN;
-        break;
-    }
-    console.log(shadow);
+      let lockState: CharacteristicValue;
+      switch (shadow.CHSesame2Status) {
+        case "locked":
+          lockState = this.platform.Characteristic.LockCurrentState.SECURED;
+          break;
+        case "unlocked":
+          lockState = this.platform.Characteristic.LockCurrentState.UNSECURED;
+          break;
+        default:
+          lockState = this.platform.Characteristic.LockCurrentState.UNKNOWN;
+          break;
+      }
 
-    this.#lockState = lockState;
-    this.#batteryLevel = shadow.batteryPercentage;
+      this.#lockState = lockState;
+      this.#batteryLevel = shadow.batteryPercentage;
+    });
   }
 
   private async fetchSesameShadow(): Promise<Sesame2Shadow> {
-    return await this.#mutex.runExclusive(async () => {
-      return await this.#client.getShadow(this.sesame.uuid);
-    });
+    return await this.#client.getShadow(this.sesame.uuid);
   }
 }
