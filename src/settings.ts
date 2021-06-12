@@ -1,5 +1,7 @@
 import { PlatformConfig } from "homebridge";
 
+import { SesameLock } from "./types/Device";
+
 /**
  * This is the name of the platform that users will use to register the plugin in the Homebridge config.json
  */
@@ -15,8 +17,3 @@ export interface OpenSesamePlatformConfig extends PlatformConfig {
   apiKey: string;
   locks: Array<SesameLock>;
 }
-
-export type SesameLock = {
-  name?: string;
-  uuid: string;
-};

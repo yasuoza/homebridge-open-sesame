@@ -33,7 +33,9 @@ export class Client {
     this.log.debug(`POST /api/sesame2/${uuid}/cmd`);
 
     const key_secret_hex = "a13d4b890111676ba8fb36ece7e94f7d";
-    const base64_history = Buffer.from("homebridge-open-sesame").toString("base64");
+    const base64_history = Buffer.from("homebridge-open-sesame").toString(
+      "base64",
+    );
     const sign = this.generateRandomTag(key_secret_hex);
 
     const res = await this.#instance.post(`/${uuid}/cmd`, {

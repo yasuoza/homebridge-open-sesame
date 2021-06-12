@@ -9,12 +9,14 @@ import {
   Characteristic,
 } from "homebridge";
 
-import { Sesame3 } from "./devices/Sesame3";
-import { PLATFORM_NAME, PLUGIN_NAME, SesameLock } from "./settings";
+import { Sesame3 } from "./accessories/Sesame3";
+import { PLATFORM_NAME, PLUGIN_NAME } from "./settings";
+import { SesameLock } from "./types/Device";
 
 export class OpenSesame implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
-  public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
+  public readonly Characteristic: typeof Characteristic =
+    this.api.hap.Characteristic;
 
   public readonly accessories: PlatformAccessory[] = [];
 
@@ -23,7 +25,11 @@ export class OpenSesame implements DynamicPlatformPlugin {
     return this.config?.updateInterval ?? 60;
   }
 
-  constructor(public readonly log: Logger, public readonly config: PlatformConfig, public readonly api: API) {
+  constructor(
+    public readonly log: Logger,
+    public readonly config: PlatformConfig,
+    public readonly api: API,
+  ) {
     this.log.debug("Finished initializing platform:", this.config.name);
 
     // Configuration is required.
@@ -46,13 +52,19 @@ export class OpenSesame implements DynamicPlatformPlugin {
     this.log.info("Loading accessory from cache:", accessory.displayName);
 
     const existingConfig = this.config.locks.find(
-      (sesame: SesameLock) => this.api.hap.uuid.generate(sesame.uuid) === accessory.UUID,
+      (sesame: SesameLock) =>
+        this.api.hap.uuid.generate(sesame.uuid) === accessory.UUID,
     );
     if (!existingConfig) {
       this.api.on("didFinishLaunching", () => {
-        this.log.info("Removing existing accessory from cache:", accessory.displayName);
+        this.log.info(
+          "Removing existing accessory from cache:",
+          accessory.displayName,
+        );
 
-        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
+          accessory,
+        ]);
       });
       return;
     }
@@ -65,9 +77,14 @@ export class OpenSesame implements DynamicPlatformPlugin {
 
     for (const sesame of sesameLocks) {
       const uuid = this.api.hap.uuid.generate(sesame.uuid);
-      const existingAccessory = this.accessories.find((accessory) => accessory.UUID === uuid);
+      const existingAccessory = this.accessories.find(
+        (accessory) => accessory.UUID === uuid,
+      );
       if (existingAccessory) {
-        this.log.info("Restoring existing accessory from cache:", existingAccessory.displayName);
+        this.log.info(
+          "Restoring existing accessory from cache:",
+          existingAccessory.displayName,
+        );
 
         new Sesame3(this, existingAccessory, sesame);
       } else {
@@ -76,7 +93,9 @@ export class OpenSesame implements DynamicPlatformPlugin {
         const name = sesame.name ?? sesame.uuid;
         const accessory = new this.api.platformAccessory(name, uuid);
         new Sesame3(this, accessory, sesame);
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
+          accessory,
+        ]);
       }
     }
   }

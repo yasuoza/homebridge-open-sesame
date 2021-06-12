@@ -3,8 +3,9 @@ import { Service, PlatformAccessory, CharacteristicValue } from "homebridge";
 
 import { Client, Command } from "../Client";
 import { OpenSesame } from "../platform";
-import { PLATFORM_NAME, SesameLock } from "../settings";
+import { PLATFORM_NAME } from "../settings";
 import { Sesame2Shadow } from "../types/API";
+import { SesameLock } from "../types/Device";
 
 export class Sesame3 {
   #client: Client;
@@ -25,16 +26,25 @@ export class Sesame3 {
 
     this.accessory
       .getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, PLATFORM_NAME)
+      .setCharacteristic(
+        this.platform.Characteristic.Manufacturer,
+        PLATFORM_NAME,
+      )
       .setCharacteristic(this.platform.Characteristic.Model, "Sesame3")
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, this.sesame.uuid);
+      .setCharacteristic(
+        this.platform.Characteristic.SerialNumber,
+        this.sesame.uuid,
+      );
 
     this.#lockService =
       this.accessory.getService(this.platform.Service.LockMechanism) ??
       this.accessory.addService(this.platform.Service.LockMechanism);
 
     const name = this.sesame.name ?? this.sesame.uuid;
-    this.#lockService.setCharacteristic(this.platform.Characteristic.Name, name);
+    this.#lockService.setCharacteristic(
+      this.platform.Characteristic.Name,
+      name,
+    );
 
     this.#lockService
       .getCharacteristic(this.platform.Characteristic.LockCurrentState)
@@ -48,8 +58,12 @@ export class Sesame3 {
     const battery =
       this.accessory.getService(this.platform.Service.Battery) ??
       this.accessory.addService(this.platform.Service.Battery);
-    battery.getCharacteristic(this.platform.Characteristic.BatteryLevel).onGet(this.getBatteryLevel.bind(this));
-    battery.getCharacteristic(this.platform.Characteristic.StatusLowBattery).onGet(this.getStatusLowBattery.bind(this));
+    battery
+      .getCharacteristic(this.platform.Characteristic.BatteryLevel)
+      .onGet(this.getBatteryLevel.bind(this));
+    battery
+      .getCharacteristic(this.platform.Characteristic.StatusLowBattery)
+      .onGet(this.getStatusLowBattery.bind(this));
 
     // Start updating status
     setInterval(async () => {
@@ -71,7 +85,6 @@ export class Sesame3 {
     return this.#lockState;
   }
 
-  // TODO: Implement setLockTargetState after API comes.
   async setLockTargetState(value: CharacteristicValue) {
     const currentLockState = this.#lockState;
 
@@ -93,13 +106,17 @@ export class Sesame3 {
 
         // Update state
         this.#lockState = value;
-        this.#lockService.getCharacteristic(this.platform.Characteristic.LockCurrentState).updateValue(value);
+        this.#lockService
+          .getCharacteristic(this.platform.Characteristic.LockCurrentState)
+          .updateValue(value);
       });
     } catch (e) {
       this.platform.log.error(e);
 
       // rollback
-      this.#lockService.getCharacteristic(this.platform.Characteristic.LockCurrentState).updateValue(currentLockState);
+      this.#lockService
+        .getCharacteristic(this.platform.Characteristic.LockCurrentState)
+        .updateValue(currentLockState);
     }
   }
 
@@ -111,7 +128,7 @@ export class Sesame3 {
     return this.#batteryLevel < 20;
   }
 
-  private async updateStatus(): Promise<void> {
+  async updateStatus(): Promise<void> {
     const shadow = await this.fetchSesameShadow();
 
     let lockState: CharacteristicValue;
@@ -126,6 +143,7 @@ export class Sesame3 {
         lockState = this.platform.Characteristic.LockCurrentState.UNKNOWN;
         break;
     }
+    console.log(shadow);
 
     this.#lockState = lockState;
     this.#batteryLevel = shadow.batteryPercentage;
