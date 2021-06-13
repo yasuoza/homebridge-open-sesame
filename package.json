@@ -26,8 +26,9 @@
     "watch": "npm run build && npm link && nodemon",
     "build": "rimraf ./dist && tsc",
     "prettier": "prettier -w 'src/**/*.ts'",
-    "prepublishOnly": "npm run lint:prettier && npm run lint:eslint && npm run build",
-    "test": "jest"
+    "homebridge": "npm run start --prefix ./homebridge --cwd ./homebridge",
+    "test": "jest",
+    "prepublishOnly": "npm run lint:prettier && npm run lint:eslint && npm run build"
   },
   "keywords": [
     "homebridge-plugin"

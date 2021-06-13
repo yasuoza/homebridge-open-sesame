@@ -5,7 +5,7 @@
     "start": "homebridge --no-qrcode --debug --user-storage-path=./"
   },
   "dependencies": {
-    "homebridge": "1.3.3",
-    "homebridge-open-sesame": "file:./homebridge-open-sesame"
+    "homebridge": "1.3.4",
+    "homebridge-open-sesame": "file:../"
   }
 }
