@@ -59,8 +59,8 @@ export class Sesame3 {
 
     // Start updating status
     this.updateStatus();
-    setInterval(async () => {
-      await this.updateStatus();
+    setInterval(() => {
+      this.updateStatus();
     }, platform.config.updateInterval * 1000);
 
     // Initialize accessory characteristics
@@ -89,14 +89,17 @@ export class Sesame3 {
 
     try {
       await this.#mutex.runExclusive(async () => {
-        await this.#client.postCmd(this.sesame, cmd, this.platform.config.name);
-
-        // Update state
-        this.#lockState = value;
         this.#lockService
-          .getCharacteristic(this.platform.Characteristic.LockCurrentState)
+          .getCharacteristic(this.platform.Characteristic.LockTargetState)
           .updateValue(value);
+
+        await this.#client.postCmd(this.sesame, cmd, this.platform.config.name);
       });
+
+      // Update state
+      setTimeout(() => {
+        this.updateStatus();
+      }, 3000);
     } catch (e) {
       this.platform.log.error(e);
 
