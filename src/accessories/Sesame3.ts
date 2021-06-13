@@ -12,6 +12,8 @@ export class Sesame3 {
   #mutex: Mutex;
 
   #lockService: Service;
+  #batteryService: Service;
+
   #lockState: number;
   #batteryLevel: number;
 
@@ -45,13 +47,13 @@ export class Sesame3 {
       .onGet(this.getLockState.bind(this))
       .onSet(this.setLockTargetState.bind(this));
 
-    const battery =
+    this.#batteryService =
       this.accessory.getService(platform.Service.Battery) ??
       this.accessory.addService(platform.Service.Battery);
-    battery
+    this.#batteryService
       .getCharacteristic(platform.Characteristic.BatteryLevel)
       .onGet(this.getBatteryLevel.bind(this));
-    battery
+    this.#batteryService
       .getCharacteristic(platform.Characteristic.StatusLowBattery)
       .onGet(this.getStatusLowBattery.bind(this));
 
@@ -66,7 +68,7 @@ export class Sesame3 {
     this.#batteryLevel = 100;
   }
 
-  async getLockState(): Promise<CharacteristicValue> {
+  getLockState(): CharacteristicValue {
     return this.#lockState;
   }
 
@@ -102,6 +104,9 @@ export class Sesame3 {
       this.#lockService
         .getCharacteristic(this.platform.Characteristic.LockCurrentState)
         .updateValue(currentLockState);
+      this.#lockService
+        .getCharacteristic(this.platform.Characteristic.LockTargetState)
+        .updateValue(currentLockState);
     }
   }
 
@@ -132,6 +137,21 @@ export class Sesame3 {
 
       this.#lockState = lockState;
       this.#batteryLevel = shadow.batteryPercentage;
+
+      // Update value. This triggers home notification
+      this.#lockService
+        .getCharacteristic(this.platform.Characteristic.LockCurrentState)
+        .updateValue(this.getLockState());
+      this.#lockService
+        .getCharacteristic(this.platform.Characteristic.LockTargetState)
+        .updateValue(this.getLockState());
+
+      this.#batteryService
+        .getCharacteristic(this.platform.Characteristic.BatteryLevel)
+        .updateValue(this.getBatteryLevel());
+      this.#batteryService
+        .getCharacteristic(this.platform.Characteristic.StatusLowBattery)
+        .updateValue(this.getStatusLowBattery());
     });
   }
 
