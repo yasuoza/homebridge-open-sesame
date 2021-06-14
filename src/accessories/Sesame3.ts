@@ -89,17 +89,13 @@ export class Sesame3 {
 
     try {
       await this.#mutex.runExclusive(async () => {
-        this.#lockService
-          .getCharacteristic(this.platform.Characteristic.LockTargetState)
-          .updateValue(value);
-
         await this.#client.postCmd(this.sesame, cmd, this.platform.config.name);
       });
 
       // Update state
       setTimeout(() => {
         this.updateStatus();
-      }, 3000);
+      }, 1000);
     } catch (e) {
       this.platform.log.error(e);
 
@@ -119,6 +115,21 @@ export class Sesame3 {
 
   getStatusLowBattery(): CharacteristicValue {
     return this.#batteryLevel < 20;
+  }
+
+  public setLockStatus(CHSesame2Status: string): void {
+    this.#lockState =
+      CHSesame2Status === "locked"
+        ? this.platform.Characteristic.LockCurrentState.SECURED
+        : this.platform.Characteristic.LockCurrentState.UNSECURED;
+
+    // Update value. This triggers home notification
+    this.#lockService
+      .getCharacteristic(this.platform.Characteristic.LockTargetState)
+      .updateValue(this.getLockState());
+    this.#lockService
+      .getCharacteristic(this.platform.Characteristic.LockCurrentState)
+      .updateValue(this.getLockState());
   }
 
   private async updateStatus(): Promise<void> {
@@ -142,6 +153,9 @@ export class Sesame3 {
       this.#batteryLevel = shadow.batteryPercentage;
 
       // Update value. This triggers home notification
+      this.#lockService
+        .getCharacteristic(this.platform.Characteristic.LockTargetState)
+        .updateValue(this.getLockState());
       this.#lockService
         .getCharacteristic(this.platform.Characteristic.LockCurrentState)
         .updateValue(this.getLockState());
