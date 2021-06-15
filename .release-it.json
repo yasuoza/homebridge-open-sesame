@@ -3,9 +3,11 @@
     "publish": false
   },
   "github": {
-    "release": true
+    "release": true,
+    "releaseName": "${version}"
   },
   "git": {
-    "requireCleanWorkingDir": true
+    "requireCleanWorkingDir": true,
+    "commitMessage": "v${version}"
   }
 }
