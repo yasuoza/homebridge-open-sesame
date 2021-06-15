@@ -32,13 +32,10 @@ export class Server {
 
   handleRequest(data: WebhookRequest): void {
     const uuid = data.uuid.toUpperCase();
-    const status = data.CHSesame2Status;
-
-    if (uuid == null || status == null) {
-      return;
-    }
-
     const sesame = this.locks.get(uuid);
-    sesame?.setLockStatus(status);
+    sesame?.setLockStatus({
+      CHSesame2Status: data.CHSesame2Status,
+      withMutexLock: true,
+    });
   }
 }

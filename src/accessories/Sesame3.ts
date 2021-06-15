@@ -6,6 +6,7 @@ import { OpenSesame } from "../platform";
 import { PLATFORM_NAME } from "../settings";
 import { Sesame2Shadow } from "../types/API";
 import { SesameLock } from "../types/Device";
+import { sleep } from "../util";
 
 export class Sesame3 {
   #client: Client;
@@ -73,8 +74,6 @@ export class Sesame3 {
   }
 
   async setLockTargetState(value: CharacteristicValue) {
-    const currentLockState = this.#lockState;
-
     let cmd: number;
     switch (value) {
       case this.platform.Characteristic.LockCurrentState.SECURED:
@@ -89,23 +88,30 @@ export class Sesame3 {
 
     try {
       await this.#mutex.runExclusive(async () => {
+        this.#lockService
+          .getCharacteristic(this.platform.Characteristic.LockTargetState)
+          .updateValue(value);
+
         await this.#client.postCmd(this.sesame, cmd, this.platform.config.name);
+
+        // Adjust update timing
+        await sleep(1000);
+
+        // Update state
+        const CHSesame2Status =
+          value == this.platform.Characteristic.LockCurrentState.SECURED
+            ? "locked"
+            : "unlocked";
+        this.setLockStatus({ CHSesame2Status });
       });
+    } catch (error) {
+      const logPrefix = this.sesame.name ?? this.sesame.uuid;
+      this.platform.log.error(`[${logPrefix}] ${error.message}`);
 
-      // Update state
-      setTimeout(() => {
-        this.updateStatus();
-      }, 1000);
-    } catch (e) {
-      this.platform.log.error(e);
-
-      // rollback
+      // Mark as jammed
       this.#lockService
         .getCharacteristic(this.platform.Characteristic.LockCurrentState)
-        .updateValue(currentLockState);
-      this.#lockService
-        .getCharacteristic(this.platform.Characteristic.LockTargetState)
-        .updateValue(currentLockState);
+        .updateValue(this.platform.Characteristic.LockCurrentState.JAMMED);
     }
   }
 
@@ -117,7 +123,18 @@ export class Sesame3 {
     return this.#batteryLevel < 20;
   }
 
-  public setLockStatus(CHSesame2Status: string): void {
+  public setLockStatus({
+    CHSesame2Status,
+    withMutexLock = false,
+  }: {
+    CHSesame2Status: string;
+    withMutexLock?: boolean;
+  }): void {
+    // In update progress.
+    if (withMutexLock && this.#mutex.isLocked()) {
+      return;
+    }
+
     this.#lockState =
       CHSesame2Status === "locked"
         ? this.platform.Characteristic.LockCurrentState.SECURED
