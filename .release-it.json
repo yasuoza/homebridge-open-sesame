@@ -1,0 +1,11 @@
+{
+  "npm": {
+    "publish": false
+  },
+  "github": {
+    "release": true
+  },
+  "git": {
+    "requireCleanWorkingDir": true
+  }
+}
