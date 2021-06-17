@@ -43,7 +43,7 @@ Configure with [Homebridge Config UI X](https://github.com/oznu/homebridge-confi
 {
   "platforms": [
     {
-      "platform": "OpenSesame"
+      "platform": "OpenSesame",
       "name": "Open Sesame",
       "apiKey": "API_KEY from candyhouse developer site",
       "clientID": "CLIENT_ID from candyhouse developer site",
@@ -54,7 +54,7 @@ Configure with [Homebridge Config UI X](https://github.com/oznu/homebridge-confi
           "secret": "Key Secret"
         }
       ],
-      "updateInterval": 60,
+      "updateInterval": 60
     }
   ]
 }
@@ -62,6 +62,6 @@ Configure with [Homebridge Config UI X](https://github.com/oznu/homebridge-confi
 
 - `updateInterval`: 鍵の状態の更新間隔(秒)
 
-### Credits
+## Credits
 
 - Cognito integration code based on [pysesame3](https://github.com/mochipon/pysesame3).
