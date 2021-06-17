@@ -9,6 +9,7 @@ import {
   Characteristic,
 } from "homebridge";
 
+import { CognitoClient } from "./CognitoClient";
 import { Server } from "./Server";
 import { Sesame3 } from "./accessories/Sesame3";
 import { PLATFORM_NAME, PLUGIN_NAME } from "./settings";
@@ -22,6 +23,8 @@ export class OpenSesame implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
 
   #server: Server | undefined;
+
+  #cognitoClient: CognitoClient | undefined;
 
   // Status update interval
   get updateInterval(): number {
@@ -40,12 +43,29 @@ export class OpenSesame implements DynamicPlatformPlugin {
       return;
     }
 
-    if (this.config.webhookPort) {
+    if (typeof this.config.webhookPort === "number") {
+      this.log.info(
+        `Webhook server is listening on ${this.config.webhookPort}`,
+      );
+
       this.#server = new Server(this.config.webhookPort);
     }
 
     this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
       this.log.debug("Executed didFinishLaunching callback");
+
+      if (
+        typeof this.config.clientID === "string" &&
+        this.config.clientID.trim()
+      ) {
+        this.log.info("Client ID detected. Using MQTT connection.");
+
+        this.#cognitoClient = new CognitoClient(
+          this.config.apiKey,
+          this.config.clientID,
+          log,
+        );
+      }
 
       this.initializeSesameLocks();
       this.#server?.listen();
@@ -95,13 +115,18 @@ export class OpenSesame implements DynamicPlatformPlugin {
           "Restoring existing accessory from cache:",
           existingAccessory.displayName,
         );
-        sesame3 = new Sesame3(this, existingAccessory, sesame);
+        sesame3 = new Sesame3(
+          this,
+          existingAccessory,
+          sesame,
+          this.#cognitoClient!,
+        );
       } else {
         this.log.info("Adding new accessory:", sesame.uuid);
 
         const name = sesame.name ?? sesame.uuid;
         const accessory = new this.api.platformAccessory(name, uuid);
-        sesame3 = new Sesame3(this, accessory, sesame);
+        sesame3 = new Sesame3(this, accessory, sesame, this.#cognitoClient!);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
           accessory,
         ]);

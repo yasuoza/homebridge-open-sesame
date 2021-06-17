@@ -2,18 +2,14 @@ import axios, { AxiosInstance } from "axios";
 import { Logger } from "homebridge";
 import { aesCmac } from "node-aes-cmac";
 
+import { Client } from "./interfaces/Client";
 import { Sesame2Shadow } from "./types/API";
+import { Command } from "./types/Command";
 import { SesameLock } from "./types/Device";
 
 const API_BASE_URL = "https://app.candyhouse.co/api/sesame2";
 
-export const Command = {
-  lock: 82,
-  unlock: 83,
-};
-type Command = typeof Command[keyof typeof Command];
-
-export class Client {
+export class CandyClient implements Client {
   #instance: AxiosInstance;
 
   constructor(apiKey: string, private readonly log: Logger) {
@@ -49,6 +45,17 @@ export class Client {
     });
 
     return res.status === 200;
+  }
+
+  async subscribe(
+    sesame: SesameLock,
+    interval: number | undefined,
+    callback: (shadow: Sesame2Shadow) => void,
+  ): Promise<void> {
+    setInterval(async () => {
+      const shadow = await this.getShadow(sesame);
+      callback(shadow);
+    }, interval);
   }
 
   // https://doc.candyhouse.co/ja/SesameAPI

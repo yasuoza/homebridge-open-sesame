@@ -59,6 +59,12 @@
       "description": "Leave blank if wehook server is not needed",
       "type": "integer",
       "required": false
+    },
+    "clientID": {
+      "title": "Client ID",
+      "description": "CLIENT_ID at https://dash.candyhouse.co",
+      "type": "string",
+      "required": false
     }
   },
   "layout": [
@@ -90,7 +96,8 @@
       "expanded": false,
       "items": [
         "updateInterval",
-        "webhookPort"
+        "webhookPort",
+        "clientID"
       ]
     }
   ]

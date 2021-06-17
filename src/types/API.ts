@@ -15,5 +15,5 @@ export type Sesame2Shadow = {
   batteryVoltage: number;
   position: number;
   CHSesame2Status: "locked" | "unlocked" | "moved";
-  timestamp: number; // epoch time
+  timestamp?: number; // epoch time
 };

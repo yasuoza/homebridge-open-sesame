@@ -1,10 +1,13 @@
 import { Mutex } from "async-mutex";
 import { Service, PlatformAccessory, CharacteristicValue } from "homebridge";
 
-import { Client, Command } from "../Client";
+import { CandyClient } from "../CandyClient";
+import { CognitoClient } from "../CognitoClient";
+import { Client } from "../interfaces/Client";
 import { OpenSesame } from "../platform";
 import { PLATFORM_NAME } from "../settings";
 import { Sesame2Shadow } from "../types/API";
+import { Command } from "../types/Command";
 import { SesameLock } from "../types/Device";
 import { sleep } from "../util";
 
@@ -18,12 +21,23 @@ export class Sesame3 {
   #lockState: number;
   #batteryLevel: number;
 
+  getBatteryLevel(): CharacteristicValue {
+    return this.#batteryLevel;
+  }
+
+  getStatusLowBattery(): CharacteristicValue {
+    return this.#batteryLevel < 20;
+  }
+
   constructor(
     private readonly platform: OpenSesame,
     private readonly accessory: PlatformAccessory,
     private readonly sesame: SesameLock,
+    cognitoClient?: CognitoClient,
   ) {
-    this.#client = new Client(platform.config.apiKey, platform.log);
+    this.#client =
+      cognitoClient ?? new CandyClient(platform.config.apiKey, platform.log);
+
     this.#mutex = new Mutex();
 
     this.accessory
@@ -60,9 +74,7 @@ export class Sesame3 {
 
     // Start updating status
     this.updateStatus();
-    setInterval(() => {
-      this.updateStatus();
-    }, platform.config.updateInterval * 1000);
+    this.subscribe();
 
     // Initialize accessory characteristics
     this.#lockState = platform.Characteristic.LockCurrentState.UNKNOWN;
@@ -73,7 +85,7 @@ export class Sesame3 {
     return this.#lockState;
   }
 
-  async setLockTargetState(value: CharacteristicValue) {
+  private async setLockTargetState(value: CharacteristicValue) {
     let cmd: number;
     switch (value) {
       case this.platform.Characteristic.LockCurrentState.SECURED:
@@ -115,14 +127,6 @@ export class Sesame3 {
     }
   }
 
-  getBatteryLevel(): CharacteristicValue {
-    return this.#batteryLevel;
-  }
-
-  getStatusLowBattery(): CharacteristicValue {
-    return this.#batteryLevel < 20;
-  }
-
   public setLockStatus({
     CHSesame2Status,
     withMutexLock = false,
@@ -147,6 +151,19 @@ export class Sesame3 {
     this.#lockService
       .getCharacteristic(this.platform.Characteristic.LockCurrentState)
       .updateValue(this.getLockState());
+  }
+
+  private async subscribe() {
+    this.#client.subscribe(
+      this.sesame,
+      this.platform.config.updateInterval * 1000,
+      (shadow: Sesame2Shadow) => {
+        this.setLockStatus({
+          CHSesame2Status: shadow.CHSesame2Status,
+          withMutexLock: true,
+        });
+      },
+    );
   }
 
   private async updateStatus(): Promise<void> {
