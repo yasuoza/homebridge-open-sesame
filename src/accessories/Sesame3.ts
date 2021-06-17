@@ -21,14 +21,6 @@ export class Sesame3 {
   #lockState: number;
   #batteryLevel: number;
 
-  getBatteryLevel(): CharacteristicValue {
-    return this.#batteryLevel;
-  }
-
-  getStatusLowBattery(): CharacteristicValue {
-    return this.#batteryLevel < 20;
-  }
-
   constructor(
     private readonly platform: OpenSesame,
     private readonly accessory: PlatformAccessory,
@@ -81,52 +73,6 @@ export class Sesame3 {
     this.#batteryLevel = 100;
   }
 
-  getLockState(): CharacteristicValue {
-    return this.#lockState;
-  }
-
-  private async setLockTargetState(value: CharacteristicValue) {
-    let cmd: number;
-    switch (value) {
-      case this.platform.Characteristic.LockCurrentState.SECURED:
-        cmd = Command.lock;
-        break;
-      case this.platform.Characteristic.LockCurrentState.UNSECURED:
-        cmd = Command.unlock;
-        break;
-      default:
-        return;
-    }
-
-    try {
-      await this.#mutex.runExclusive(async () => {
-        this.#lockService
-          .getCharacteristic(this.platform.Characteristic.LockTargetState)
-          .updateValue(value);
-
-        await this.#client.postCmd(this.sesame, cmd, this.platform.config.name);
-
-        // Adjust update timing
-        await sleep(1000);
-
-        // Update state
-        const CHSesame2Status =
-          value == this.platform.Characteristic.LockCurrentState.SECURED
-            ? "locked"
-            : "unlocked";
-        this.setLockStatus({ CHSesame2Status });
-      });
-    } catch (error) {
-      const logPrefix = this.sesame.name ?? this.sesame.uuid;
-      this.platform.log.error(`[${logPrefix}] ${error.message}`);
-
-      // Mark as jammed
-      this.#lockService
-        .getCharacteristic(this.platform.Characteristic.LockCurrentState)
-        .updateValue(this.platform.Characteristic.LockCurrentState.JAMMED);
-    }
-  }
-
   public setLockStatus({
     CHSesame2Status,
     withMutexLock = false,
@@ -151,6 +97,69 @@ export class Sesame3 {
     this.#lockService
       .getCharacteristic(this.platform.Characteristic.LockCurrentState)
       .updateValue(this.getLockState());
+  }
+
+  private getBatteryLevel(): CharacteristicValue {
+    return this.#batteryLevel;
+  }
+
+  private getStatusLowBattery(): CharacteristicValue {
+    return this.#batteryLevel < 20;
+  }
+
+  private getLockState(): CharacteristicValue {
+    return this.#lockState;
+  }
+
+  private get candyClientMode(): boolean {
+    return this.#client instanceof CandyClient;
+  }
+
+  private async setLockTargetState(value: CharacteristicValue) {
+    let cmd: number;
+    switch (value) {
+      case this.platform.Characteristic.LockCurrentState.SECURED:
+        cmd = Command.lock;
+        break;
+      case this.platform.Characteristic.LockCurrentState.UNSECURED:
+        cmd = Command.unlock;
+        break;
+      default:
+        return;
+    }
+
+    try {
+      await this.#mutex.runExclusive(async () => {
+        this.#lockService
+          .getCharacteristic(this.platform.Characteristic.LockTargetState)
+          .updateValue(value);
+
+        await this.#client.postCmd(this.sesame, cmd, this.platform.config.name);
+
+        // Using CognitoClient, we don't need update manually.
+        // Updating status will be done by mqtt subscription.
+        // While CandyClient delays until next updateStatus occurs.
+        // So, update status for CandyClient only.
+        if (this.candyClientMode) {
+          // Adjust update timing
+          await sleep(1000);
+          // Update state
+          const CHSesame2Status =
+            value == this.platform.Characteristic.LockCurrentState.SECURED
+              ? "locked"
+              : "unlocked";
+          this.setLockStatus({ CHSesame2Status });
+        }
+      });
+    } catch (error) {
+      const logPrefix = this.sesame.name ?? this.sesame.uuid;
+      this.platform.log.error(`[${logPrefix}] ${error.message}`);
+
+      // Mark as jammed
+      this.#lockService
+        .getCharacteristic(this.platform.Characteristic.LockCurrentState)
+        .updateValue(this.platform.Characteristic.LockCurrentState.JAMMED);
+    }
   }
 
   private async subscribe() {
