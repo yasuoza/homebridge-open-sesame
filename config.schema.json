@@ -6,6 +6,7 @@
     "name": {
       "type": "string",
       "title": "Name",
+      "description": "This name will be used at history page on Sesame.app",
       "default": "Open Sesame",
       "required": true
     },
@@ -73,7 +74,8 @@
       "title": "Common settings",
       "items": [
         "name",
-        "apiKey"
+        "apiKey",
+        "clientID"
       ]
     },
     {
@@ -96,8 +98,7 @@
       "expanded": false,
       "items": [
         "updateInterval",
-        "webhookPort",
-        "clientID"
+        "webhookPort"
       ]
     }
   ]
