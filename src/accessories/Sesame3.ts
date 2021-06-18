@@ -65,7 +65,7 @@ export class Sesame3 {
       .onGet(this.getStatusLowBattery.bind(this));
 
     // Start updating status
-    this.updateStatus();
+    this.updateToLatestStatus();
     this.subscribe();
 
     // Initialize accessory characteristics
@@ -75,28 +75,42 @@ export class Sesame3 {
 
   public setLockStatus({
     CHSesame2Status,
-    withMutexLock = false,
+    batteryPercentage = undefined,
+    forceUpdate = false,
   }: {
     CHSesame2Status: string;
-    withMutexLock?: boolean;
+    batteryPercentage?: number;
+    forceUpdate?: boolean;
   }): void {
-    // In update progress.
-    if (withMutexLock && this.#mutex.isLocked()) {
+    // In update progress
+    // returns unless forceUpdate
+    if (this.#mutex.isLocked() && !forceUpdate) {
       return;
     }
 
+    // Update lock service
     this.#lockState =
       CHSesame2Status === "locked"
         ? this.platform.Characteristic.LockCurrentState.SECURED
         : this.platform.Characteristic.LockCurrentState.UNSECURED;
-
-    // Update value. This triggers home notification
     this.#lockService
       .getCharacteristic(this.platform.Characteristic.LockTargetState)
       .updateValue(this.getLockState());
     this.#lockService
       .getCharacteristic(this.platform.Characteristic.LockCurrentState)
       .updateValue(this.getLockState());
+
+    // Update battery service
+    if (typeof batteryPercentage === "undefined") {
+      return;
+    }
+    this.#batteryLevel = batteryPercentage;
+    this.#batteryService
+      .getCharacteristic(this.platform.Characteristic.BatteryLevel)
+      .updateValue(this.getBatteryLevel());
+    this.#batteryService
+      .getCharacteristic(this.platform.Characteristic.StatusLowBattery)
+      .updateValue(this.getStatusLowBattery());
   }
 
   private getBatteryLevel(): CharacteristicValue {
@@ -113,6 +127,14 @@ export class Sesame3 {
 
   private get candyClientMode(): boolean {
     return this.#client instanceof CandyClient;
+  }
+
+  private async updateToLatestStatus(): Promise<void> {
+    const shadow = await this.#client.getShadow(this.sesame);
+    this.setLockStatus({
+      CHSesame2Status: shadow.CHSesame2Status,
+      batteryPercentage: shadow.batteryPercentage,
+    });
   }
 
   private async setLockTargetState(value: CharacteristicValue) {
@@ -148,7 +170,7 @@ export class Sesame3 {
             value == this.platform.Characteristic.LockCurrentState.SECURED
               ? "locked"
               : "unlocked";
-          this.setLockStatus({ CHSesame2Status });
+          this.setLockStatus({ CHSesame2Status, forceUpdate: true });
         }
       });
     } catch (error) {
@@ -169,50 +191,9 @@ export class Sesame3 {
       (shadow: Sesame2Shadow) => {
         this.setLockStatus({
           CHSesame2Status: shadow.CHSesame2Status,
-          withMutexLock: true,
+          batteryPercentage: shadow.batteryPercentage,
         });
       },
     );
-  }
-
-  private async updateStatus(): Promise<void> {
-    return await this.#mutex.runExclusive(async () => {
-      const shadow = await this.fetchSesameShadow();
-
-      let lockState: CharacteristicValue;
-      switch (shadow.CHSesame2Status) {
-        case "locked":
-          lockState = this.platform.Characteristic.LockCurrentState.SECURED;
-          break;
-        case "unlocked":
-          lockState = this.platform.Characteristic.LockCurrentState.UNSECURED;
-          break;
-        default:
-          lockState = this.platform.Characteristic.LockCurrentState.UNKNOWN;
-          break;
-      }
-
-      this.#lockState = lockState;
-      this.#batteryLevel = shadow.batteryPercentage;
-
-      // Update value. This triggers home notification
-      this.#lockService
-        .getCharacteristic(this.platform.Characteristic.LockTargetState)
-        .updateValue(this.getLockState());
-      this.#lockService
-        .getCharacteristic(this.platform.Characteristic.LockCurrentState)
-        .updateValue(this.getLockState());
-
-      this.#batteryService
-        .getCharacteristic(this.platform.Characteristic.BatteryLevel)
-        .updateValue(this.getBatteryLevel());
-      this.#batteryService
-        .getCharacteristic(this.platform.Characteristic.StatusLowBattery)
-        .updateValue(this.getStatusLowBattery());
-    });
-  }
-
-  private async fetchSesameShadow(): Promise<Sesame2Shadow> {
-    return await this.#client.getShadow(this.sesame);
   }
 }

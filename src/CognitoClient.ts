@@ -38,7 +38,7 @@ export class CognitoClient implements Client {
   }
 
   async getShadow(sesame: SesameLock): Promise<Sesame2Shadow> {
-    this.log.debug(`GET /api/sesame2/${sesame.uuid}`);
+    this.log.debug(`GET /things/sesame2/shadow?name=${sesame.uuid}`);
 
     if (this.credentialExpired) {
       await this.authenticate();
@@ -85,10 +85,10 @@ export class CognitoClient implements Client {
       mqtt.QoS.AtLeastOnce,
       (_: string, payload: ArrayBuffer) => {
         const data = decoder.decode(payload);
-        this.log.debug("json:", decoder.decode(payload));
-
         const json = JSON.parse(data);
-        callback(this.convertToSesame2Shadow(json.state.reported.mechst));
+        const shadow = this.convertToSesame2Shadow(json.state.reported.mechst);
+        this.log.debug("Shadow:", JSON.stringify(shadow));
+        callback(shadow);
       },
     );
 
@@ -102,7 +102,7 @@ export class CognitoClient implements Client {
     cmd: Command,
     historyName?: string,
   ): Promise<boolean> {
-    this.log.debug(`POST /api/sesame2/${sesame.uuid}/cmd`);
+    this.log.debug(`POST /device/v1/iot/sesame2/${sesame.uuid}`);
 
     if (this.credentialExpired) {
       await this.authenticate();

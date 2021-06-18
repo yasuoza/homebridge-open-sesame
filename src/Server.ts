@@ -35,7 +35,6 @@ export class Server {
     const sesame = this.locks.get(uuid);
     sesame?.setLockStatus({
       CHSesame2Status: data.CHSesame2Status,
-      withMutexLock: true,
     });
   }
 }
