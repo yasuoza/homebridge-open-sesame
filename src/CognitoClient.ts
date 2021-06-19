@@ -83,16 +83,20 @@ export class CognitoClient implements Client {
     this.#connection?.subscribe(
       `$aws/things/sesame2/shadow/name/${sesame.uuid}/update/accepted`,
       mqtt.QoS.AtLeastOnce,
-      (_, payload: ArrayBuffer | undefined) => {
-        if (typeof payload === "undefined") {
-          return;
-        }
+      (_, payload: ArrayBuffer) => {
         try {
           const data = decoder.decode(payload);
+          if (typeof data === "undefined") {
+            return;
+          }
+
           const json = JSON.parse(data);
-          const shadow = this.convertToSesame2Shadow(
-            json.state.reported.mechst,
-          );
+          const mechst = json.state.reported.mechst;
+          if (typeof mechst !== "string") {
+            return;
+          }
+
+          const shadow = this.convertToSesame2Shadow(mechst);
           this.log.debug("Shadow:", JSON.stringify(shadow));
           callback(shadow);
         } catch (error) {
