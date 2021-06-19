@@ -66,7 +66,7 @@ export class CognitoClient implements Client {
 
   async subscribe(
     sesame: SesameLock,
-    _: number | undefined,
+    _: number,
     callback: (shadow: Sesame2Shadow) => void,
   ): Promise<void> {
     if (this.credentialExpired) {

@@ -15,6 +15,8 @@ export const PLUGIN_NAME = "homebridge-open-sesame";
 //Config
 export interface OpenSesamePlatformConfig extends PlatformConfig {
   apiKey: string;
-  clientID?: string | undefined;
+  clientID: string;
   locks: Array<SesameLock>;
+  updateInterval: number;
+  webhookPort?: number;
 }

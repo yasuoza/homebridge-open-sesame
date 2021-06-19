@@ -13,7 +13,7 @@ export interface Client {
 
   subscribe(
     sesame: SesameLock,
-    interval: number | undefined,
+    interval: number,
     callback: (shadow: Sesame2Shadow) => void,
   ): Promise<void>;
 }

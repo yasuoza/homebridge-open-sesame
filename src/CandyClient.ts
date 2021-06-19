@@ -49,7 +49,7 @@ export class CandyClient implements Client {
 
   async subscribe(
     sesame: SesameLock,
-    interval: number | undefined,
+    interval: number,
     callback: (shadow: Sesame2Shadow) => void,
   ): Promise<void> {
     setInterval(async () => {

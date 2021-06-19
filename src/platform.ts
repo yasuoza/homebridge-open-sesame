@@ -12,7 +12,11 @@ import {
 import { CognitoClient } from "./CognitoClient";
 import { Server } from "./Server";
 import { Sesame3 } from "./accessories/Sesame3";
-import { PLATFORM_NAME, PLUGIN_NAME } from "./settings";
+import {
+  PLATFORM_NAME,
+  PLUGIN_NAME,
+  OpenSesamePlatformConfig,
+} from "./settings";
 import { SesameLock } from "./types/Device";
 
 export class OpenSesame implements DynamicPlatformPlugin {
@@ -20,28 +24,33 @@ export class OpenSesame implements DynamicPlatformPlugin {
   public readonly Characteristic: typeof Characteristic =
     this.api.hap.Characteristic;
 
-  public readonly accessories: PlatformAccessory[] = [];
+  public readonly config: OpenSesamePlatformConfig;
+  public readonly accessories: Array<PlatformAccessory> = [];
 
   #server: Server | undefined;
 
   #cognitoClient: CognitoClient | undefined;
 
-  // Status update interval
-  get updateInterval(): number {
-    return this.config.updateInterval ?? 60;
-  }
-
   constructor(
     public readonly log: Logger,
-    public readonly config: PlatformConfig,
+    config: PlatformConfig,
     public readonly api: API,
   ) {
-    this.log.debug("Finished initializing platform:", this.config.name);
+    this.log.debug("Finished initializing platform:", config.name);
 
-    // Configuration is required.
-    if (typeof this.config === "undefined") {
+    if (!this.verifyConfig(config)) {
+      // Dummy data to pass Strict Property Initialization
+      this.config = {
+        ...config,
+        apiKey: "",
+        clientID: "",
+        locks: [],
+        updateInterval: Number.POSITIVE_INFINITY,
+      };
       return;
     }
+
+    this.config = config;
 
     if (typeof this.config.webhookPort === "number") {
       this.log.info(
@@ -54,10 +63,7 @@ export class OpenSesame implements DynamicPlatformPlugin {
     this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
       this.log.debug("Executed didFinishLaunching callback");
 
-      if (
-        typeof this.config.clientID === "string" &&
-        this.config.clientID.trim()
-      ) {
+      if (this.config.clientID.trim()) {
         this.log.info("Client ID detected. Using MQTT connection.");
 
         this.#cognitoClient = new CognitoClient(
@@ -100,8 +106,16 @@ export class OpenSesame implements DynamicPlatformPlugin {
     this.accessories.push(accessory);
   }
 
-  initializeSesameLocks() {
-    const sesameLocks: [SesameLock] = this.config.locks;
+  private verifyConfig(
+    config: PlatformConfig | OpenSesamePlatformConfig,
+  ): config is OpenSesamePlatformConfig {
+    return ["apiKey", "clientID", "locks", "updateInterval"].every(
+      (key: string) => key in config,
+    );
+  }
+
+  private initializeSesameLocks() {
+    const sesameLocks: Array<SesameLock> = this.config.locks;
 
     for (const sesame of sesameLocks) {
       const uuid = this.api.hap.uuid.generate(sesame.uuid);
