@@ -59,8 +59,9 @@ Configure with [Homebridge Config UI X](https://github.com/oznu/homebridge-confi
   ]
 }
 ```
+_Note_
 
-- `updateInterval`: 鍵の状態の更新間隔(秒)
+- `updateInterval`: Update sesame status interval(second).
 
 ## Credits
 
