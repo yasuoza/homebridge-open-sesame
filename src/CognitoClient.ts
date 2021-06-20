@@ -104,10 +104,6 @@ export class CognitoClient implements Client {
         }
       },
     );
-
-    this.#connection?.on("disconnect", () => {
-      this.log.info("MqttClient connection is disconnected");
-    });
   }
 
   async postCmd(
@@ -176,30 +172,47 @@ export class CognitoClient implements Client {
     this.log.debug("Creating mqtt connection");
 
     const region = this.#clientID.split(":")[0];
-    const client_bootstrap = new io.ClientBootstrap();
-    const config_builder =
-      iot.AwsIotMqttConnectionConfigBuilder.new_with_websockets({
-        region: region,
-        credentials_provider:
-          auth.AwsCredentialsProvider.newDefault(client_bootstrap),
-      });
-    config_builder.with_clean_session(true);
-    config_builder.with_endpoint(IOT_EP);
-    config_builder.with_port(443);
-    config_builder.with_keep_alive_seconds(60);
-    config_builder.with_client_id(this.#clientID);
-    config_builder.with_credentials(
-      "ap-northeast-1",
-      this.#credential.AccessKeyId!,
-      this.#credential.SecretKey!,
-      this.#credential.SessionToken!,
-    );
+    const bootstrap = new io.ClientBootstrap();
+    const config = iot.AwsIotMqttConnectionConfigBuilder.new_with_websockets({
+      region: region,
+      credentials_provider: auth.AwsCredentialsProvider.newDefault(bootstrap),
+    })
+      .with_clean_session(false)
+      .with_endpoint(IOT_EP)
+      .with_port(443)
+      .with_keep_alive_seconds(60)
+      .with_ping_timeout_ms(5 * 1000)
+      .with_protocol_operation_timeout_ms(5 * 1000)
+      .with_client_id(this.#clientID)
+      .with_credentials(
+        "ap-northeast-1",
+        this.#credential.AccessKeyId!,
+        this.#credential.SecretKey!,
+        this.#credential.SessionToken!,
+      )
+      .build();
 
-    const mqttClient = new mqtt.MqttClient(client_bootstrap);
-    const connection = mqttClient.new_connection(config_builder.build());
+    const mqttClient = new mqtt.MqttClient(bootstrap);
+    const connection = mqttClient.new_connection(config);
     await connection.connect();
 
     this.log.debug("mqtt connection is created");
+
+    connection.on("interrupt", (error) => {
+      this.log.error("MqttClient interrupt:", error);
+    });
+    connection.on("resume", (return_code: number, session_present: boolean) => {
+      this.log.info(
+        "MqttClient resume connection.",
+        "return_code:",
+        return_code,
+        "session_present:",
+        session_present,
+      );
+    });
+    connection.on("disconnect", () => {
+      this.log.info("MqttClient connection is disconnected");
+    });
 
     return connection;
   }
