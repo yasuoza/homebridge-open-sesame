@@ -4,13 +4,13 @@ import {
   GetIdCommand,
   GetCredentialsForIdentityCommand,
 } from "@aws-sdk/client-cognito-identity";
-import { Mutex } from "async-mutex";
 import { aws4Interceptor } from "aws4-axios";
-import { mqtt, auth, io, iot } from "aws-iot-device-sdk-v2";
+import * as awsIot from "aws-iot-device-sdk";
 import axios from "axios";
 import { Logger } from "homebridge";
 import { aesCmac } from "node-aes-cmac";
 import { TextDecoder } from "util";
+import { v4 as uuidv4 } from "uuid";
 
 import { Client } from "./interfaces/Client";
 import { Sesame2Shadow } from "./types/API";
@@ -27,14 +27,10 @@ export class CognitoClient implements Client {
 
   #credential: Credentials;
 
-  #mutex: Mutex;
-  #connection: mqtt.MqttClientConnection | undefined;
-
   constructor(apiKey: string, clientID: string, private readonly log: Logger) {
     this.#apiKey = apiKey;
     this.#clientID = clientID;
     this.#credential = {};
-    this.#mutex = new Mutex();
   }
 
   async getShadow(sesame: SesameLock): Promise<Sesame2Shadow> {
@@ -73,37 +69,55 @@ export class CognitoClient implements Client {
       await this.authenticate();
     }
 
-    await this.#mutex.runExclusive(async () => {
-      if (typeof this.#connection === "undefined" || this.#connection == null) {
-        this.#connection = await this.createConnection();
-      }
+    const decoder = new TextDecoder("utf8");
+
+    const device = new awsIot.device({
+      host: IOT_EP,
+      protocol: "wss",
+      clientId: uuidv4(),
+      accessKeyId: this.#credential.AccessKeyId!,
+      secretKey: this.#credential.SecretKey!,
+      sessionToken: this.#credential.SessionToken!,
     });
 
-    const decoder = new TextDecoder("utf8");
-    this.#connection?.subscribe(
-      `$aws/things/sesame2/shadow/name/${sesame.uuid}/update/accepted`,
-      mqtt.QoS.AtLeastOnce,
-      (_, payload: ArrayBuffer) => {
-        try {
-          const data = decoder.decode(payload);
-          if (typeof data === "undefined") {
-            return;
-          }
+    device.on("message", (_, payload: ArrayBuffer) => {
+      const data = decoder.decode(payload);
+      if (typeof data === "undefined") {
+        return;
+      }
 
-          const json = JSON.parse(data);
-          const mechst = json.state.reported.mechst;
-          if (typeof mechst !== "string") {
-            return;
-          }
+      const json = JSON.parse(data);
+      const mechst = json.state.reported.mechst;
+      if (typeof mechst !== "string") {
+        return;
+      }
 
-          const shadow = this.convertToSesame2Shadow(mechst);
-          this.log.debug("Shadow:", JSON.stringify(shadow));
-          callback(shadow);
-        } catch (error) {
-          this.log.error("subscription callback error:", error.message);
+      const shadow = this.convertToSesame2Shadow(mechst);
+      this.log.debug(`${sesame.uuid}:`, JSON.stringify(shadow));
+      callback(shadow);
+    });
+
+    device.on("connect", () => {
+      this.log.info(`${sesame.uuid}: mqtt connection is established`);
+
+      const topic = `$aws/things/sesame2/shadow/name/${sesame.uuid}/update/accepted`;
+      device.subscribe(topic, { qos: 1 }, (err) => {
+        if (!err) {
+          this.log.debug(`${sesame.uuid}: subscribed to ${topic}`);
         }
-      },
-    );
+      });
+    });
+
+    device
+      .on("error", (error) => {
+        this.log.error(`${sesame.uuid}: mqtt error:`, error);
+      })
+      .on("reconnect", () => {
+        this.log.debug(`${sesame.uuid}: mqtt connection is reconnected`);
+      })
+      .on("close", () => {
+        this.log.info(`${sesame.uuid}: mqtt connection is closed`);
+      });
   }
 
   async postCmd(
@@ -166,55 +180,6 @@ export class CognitoClient implements Client {
       IdentityId: data.IdentityId,
     });
     this.#credential = (await cognitoClient.send(credCommand)).Credentials!;
-  }
-
-  private async createConnection(): Promise<mqtt.MqttClientConnection> {
-    this.log.debug("Creating mqtt connection");
-
-    const region = this.#clientID.split(":")[0];
-    const bootstrap = new io.ClientBootstrap();
-    const config = iot.AwsIotMqttConnectionConfigBuilder.new_with_websockets({
-      region: region,
-      credentials_provider: auth.AwsCredentialsProvider.newDefault(bootstrap),
-    })
-      .with_clean_session(false)
-      .with_endpoint(IOT_EP)
-      .with_port(443)
-      .with_keep_alive_seconds(60)
-      .with_ping_timeout_ms(5 * 1000)
-      .with_protocol_operation_timeout_ms(5 * 1000)
-      .with_client_id(this.#clientID)
-      .with_credentials(
-        "ap-northeast-1",
-        this.#credential.AccessKeyId!,
-        this.#credential.SecretKey!,
-        this.#credential.SessionToken!,
-      )
-      .build();
-
-    const mqttClient = new mqtt.MqttClient(bootstrap);
-    const connection = mqttClient.new_connection(config);
-    await connection.connect();
-
-    this.log.debug("mqtt connection is created");
-
-    connection.on("interrupt", (error) => {
-      this.log.error("MqttClient interrupt:", error);
-    });
-    connection.on("resume", (return_code: number, session_present: boolean) => {
-      this.log.info(
-        "MqttClient resume connection.",
-        "return_code:",
-        return_code,
-        "session_present:",
-        session_present,
-      );
-    });
-    connection.on("disconnect", () => {
-      this.log.info("MqttClient connection is disconnected");
-    });
-
-    return connection;
   }
 
   // https://doc.candyhouse.co/ja/SesameAPI
