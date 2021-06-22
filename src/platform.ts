@@ -9,7 +9,6 @@ import {
   Characteristic,
 } from "homebridge";
 
-import { CognitoClient } from "./CognitoClient";
 import { Server } from "./Server";
 import { Sesame3 } from "./accessories/Sesame3";
 import {
@@ -28,8 +27,6 @@ export class OpenSesame implements DynamicPlatformPlugin {
   public readonly accessories: Array<PlatformAccessory> = [];
 
   #server: Server | undefined;
-
-  #cognitoClient: CognitoClient | undefined;
 
   constructor(
     public readonly log: Logger,
@@ -62,16 +59,6 @@ export class OpenSesame implements DynamicPlatformPlugin {
 
     this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
       this.log.debug("Executed didFinishLaunching callback");
-
-      if (this.config.clientID.trim()) {
-        this.log.info("Client ID detected. Using MQTT connection.");
-
-        this.#cognitoClient = new CognitoClient(
-          this.config.apiKey,
-          this.config.clientID,
-          log,
-        );
-      }
 
       this.initializeSesameLocks();
       this.#server?.listen();
@@ -129,18 +116,13 @@ export class OpenSesame implements DynamicPlatformPlugin {
           "Restoring existing accessory from cache:",
           existingAccessory.displayName,
         );
-        sesame3 = new Sesame3(
-          this,
-          existingAccessory,
-          sesame,
-          this.#cognitoClient!,
-        );
+        sesame3 = new Sesame3(this, existingAccessory, sesame);
       } else {
         this.log.info("Adding new accessory:", sesame.uuid);
 
         const name = sesame.name ?? sesame.uuid;
         const accessory = new this.api.platformAccessory(name, uuid);
-        sesame3 = new Sesame3(this, accessory, sesame, this.#cognitoClient!);
+        sesame3 = new Sesame3(this, accessory, sesame);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
           accessory,
         ]);

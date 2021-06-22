@@ -25,10 +25,12 @@ export class Sesame3 {
     private readonly platform: OpenSesame,
     private readonly accessory: PlatformAccessory,
     private readonly sesame: SesameLock,
-    cognitoClient?: CognitoClient,
   ) {
-    this.#client =
-      cognitoClient ?? new CandyClient(platform.config.apiKey, platform.log);
+    this.#client = new CognitoClient(
+      this.platform.config.apiKey,
+      this.platform.config.clientID,
+      this.platform.log,
+    );
 
     this.#mutex = new Mutex();
 
