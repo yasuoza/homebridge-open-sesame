@@ -10,7 +10,6 @@ import axios from "axios";
 import { Logger } from "homebridge";
 import { aesCmac } from "node-aes-cmac";
 import { TextDecoder } from "util";
-import { v4 as uuidv4 } from "uuid";
 
 import { Client } from "./interfaces/Client";
 import { Sesame2Shadow } from "./types/API";
@@ -22,21 +21,29 @@ const APIGW_URL =
 const IOT_EP = "a3i4hui4gxwoo8-ats.iot.ap-northeast-1.amazonaws.com";
 
 export class CognitoClient implements Client {
-  #apiKey: string;
-  #clientID: string;
+  readonly #sesame: SesameLock;
+  readonly #apiKey: string;
+  readonly #clientID: string;
 
   #credential: Credentials;
   #device: awsIot.device | undefined;
 
-  constructor(apiKey: string, clientID: string, private readonly log: Logger) {
+  constructor(
+    sesame: SesameLock,
+    apiKey: string,
+    clientID: string,
+    private readonly log: Logger,
+  ) {
+    this.#sesame = sesame;
     this.#apiKey = apiKey;
     this.#clientID = clientID;
+
     this.#credential = {};
     this.#device = undefined;
   }
 
-  async getShadow(sesame: SesameLock): Promise<Sesame2Shadow> {
-    this.log.debug(`GET /things/sesame2/shadow?name=${sesame.uuid}`);
+  async getShadow(): Promise<Sesame2Shadow> {
+    this.log.debug(`GET /things/sesame2/shadow?name=${this.#sesame.uuid}`);
 
     if (this.credentialExpired) {
       await this.authenticate();
@@ -56,38 +63,33 @@ export class CognitoClient implements Client {
     );
     client.interceptors.request.use(interceptor);
     const res = await client.get(
-      `https://${IOT_EP}/things/sesame2/shadow?name=${sesame.uuid}`,
+      `https://${IOT_EP}/things/sesame2/shadow?name=${this.#sesame.uuid}`,
     );
 
-    return this.convertToSesame2Shadow(res.data.state.reported.mechst);
+    const shadow = this.convertToSesame2Shadow(res.data.state.reported.mechst);
+    this.log.debug(`${this.#sesame.uuid}:`, JSON.stringify(shadow));
+
+    return shadow;
   }
 
-  async subscribe(
-    sesame: SesameLock,
-    _: number,
-    callback: (shadow: Sesame2Shadow) => void,
-  ): Promise<void> {
-    await this.connectAndSubscribe(sesame, callback);
+  async subscribe(callback: (shadow: Sesame2Shadow) => void): Promise<void> {
+    await this.connectAndSubscribe(callback);
 
     // Websocket connection will be closed after 24 hours based on aws iot quota.
     // So, re-establish websocket connection after 23 hours.
     // see https://docs.aws.amazon.com/general/latest/gr/iot-core.html#iot-protocol-limits
     const expire = 23 * 60 * 60 * 1000; // milliseconds
     setInterval(() => {
-      this.log.info(`${sesame.uuid}: reconnect mqtt on schedule`);
+      this.log.info(`${this.#sesame.uuid}: reconnect mqtt on schedule`);
 
       this.#device?.end(false, () => {
-        this.connectAndSubscribe(sesame, callback);
+        this.connectAndSubscribe(callback);
       });
     }, expire);
   }
 
-  async postCmd(
-    sesame: SesameLock,
-    cmd: Command,
-    historyName?: string,
-  ): Promise<boolean> {
-    this.log.debug(`POST /device/v1/iot/sesame2/${sesame.uuid}`);
+  async postCmd(cmd: Command, historyName?: string): Promise<boolean> {
+    this.log.debug(`POST /device/v1/iot/sesame2/${this.#sesame.uuid}`);
 
     if (this.credentialExpired) {
       await this.authenticate();
@@ -110,10 +112,10 @@ export class CognitoClient implements Client {
       ),
     );
 
-    const url = `${APIGW_URL}/device/v1/iot/sesame2/${sesame.uuid}`;
+    const url = `${APIGW_URL}/device/v1/iot/sesame2/${this.#sesame.uuid}`;
     const history = historyName ?? "Homebridge";
     const base64_history = Buffer.from(history).toString("base64");
-    const sign = this.generateRandomTag(sesame.secret).slice(0, 8);
+    const sign = this.generateRandomTag(this.#sesame.secret).slice(0, 8);
     const res = await instance.post(url, {
       cmd: cmd,
       history: base64_history,
@@ -144,10 +146,7 @@ export class CognitoClient implements Client {
     this.#credential = (await cognitoClient.send(credCommand)).Credentials!;
   }
 
-  private async connectAndSubscribe(
-    sesame: SesameLock,
-    callback: (shadow: Sesame2Shadow) => void,
-  ) {
+  private async connectAndSubscribe(callback: (shadow: Sesame2Shadow) => void) {
     if (this.credentialExpired) {
       await this.authenticate();
     }
@@ -156,7 +155,7 @@ export class CognitoClient implements Client {
       host: IOT_EP,
       protocol: "wss",
       clean: false,
-      clientId: uuidv4(),
+      clientId: this.#sesame.uuid,
       accessKeyId: this.#credential.AccessKeyId!,
       secretKey: this.#credential.SecretKey!,
       sessionToken: this.#credential.SessionToken!,
@@ -176,30 +175,32 @@ export class CognitoClient implements Client {
       }
 
       const shadow = this.convertToSesame2Shadow(mechst);
-      this.log.debug(`${sesame.uuid}:`, JSON.stringify(shadow));
+      this.log.debug(`${this.#sesame.uuid}:`, JSON.stringify(shadow));
       callback(shadow);
     });
 
     this.#device.on("connect", () => {
-      this.log.info(`${sesame.uuid}: mqtt connection is established`);
+      this.log.info(`${this.#sesame.uuid}: mqtt connection is established`);
 
-      const topic = `$aws/things/sesame2/shadow/name/${sesame.uuid}/update/accepted`;
+      const topic = `$aws/things/sesame2/shadow/name/${
+        this.#sesame.uuid
+      }/update/accepted`;
       this.#device?.subscribe(topic, { qos: 1 }, (err) => {
         if (!err) {
-          this.log.debug(`${sesame.uuid}: subscribed to ${topic}`);
+          this.log.debug(`${this.#sesame.uuid}: subscribed to ${topic}`);
         }
       });
     });
 
     this.#device
       .on("error", (error) => {
-        this.log.error(`${sesame.uuid}: mqtt error:`, error);
+        this.log.error(`${this.#sesame.uuid}: mqtt error:`, error);
       })
       .on("reconnect", () => {
-        this.log.debug(`${sesame.uuid}: mqtt connection is reconnected`);
+        this.log.debug(`${this.#sesame.uuid}: mqtt connection is reconnected`);
       })
       .on("close", () => {
-        this.log.info(`${sesame.uuid}: mqtt connection is closed`);
+        this.log.info(`${this.#sesame.uuid}: mqtt connection is closed`);
       });
   }
 

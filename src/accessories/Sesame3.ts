@@ -1,7 +1,6 @@
 import { Mutex } from "async-mutex";
 import { Service, PlatformAccessory, CharacteristicValue } from "homebridge";
 
-import { CandyClient } from "../CandyClient";
 import { CognitoClient } from "../CognitoClient";
 import { Client } from "../interfaces/Client";
 import { OpenSesame } from "../platform";
@@ -9,7 +8,6 @@ import { PLATFORM_NAME } from "../settings";
 import { Sesame2Shadow } from "../types/API";
 import { Command } from "../types/Command";
 import { SesameLock } from "../types/Device";
-import { sleep } from "../util";
 
 export class Sesame3 {
   #client: Client;
@@ -27,6 +25,7 @@ export class Sesame3 {
     private readonly sesame: SesameLock,
   ) {
     this.#client = new CognitoClient(
+      this.sesame,
       this.platform.config.apiKey,
       this.platform.config.clientID,
       this.platform.log,
@@ -127,12 +126,8 @@ export class Sesame3 {
     return this.#lockState;
   }
 
-  private get candyClientMode(): boolean {
-    return this.#client instanceof CandyClient;
-  }
-
   private async updateToLatestStatus(): Promise<void> {
-    const shadow = await this.#client.getShadow(this.sesame);
+    const shadow = await this.#client.getShadow();
     this.setLockStatus({
       CHSesame2Status: shadow.CHSesame2Status,
       batteryPercentage: shadow.batteryPercentage,
@@ -158,22 +153,7 @@ export class Sesame3 {
           .getCharacteristic(this.platform.Characteristic.LockTargetState)
           .updateValue(value);
 
-        await this.#client.postCmd(this.sesame, cmd, this.platform.config.name);
-
-        // Using CognitoClient, we don't need update manually.
-        // Updating status will be done by mqtt subscription.
-        // While CandyClient delays until next updateStatus occurs.
-        // So, update status for CandyClient only.
-        if (this.candyClientMode) {
-          // Adjust update timing
-          await sleep(1000);
-          // Update state
-          const CHSesame2Status =
-            value == this.platform.Characteristic.LockCurrentState.SECURED
-              ? "locked"
-              : "unlocked";
-          this.setLockStatus({ CHSesame2Status, forceUpdate: true });
-        }
+        await this.#client.postCmd(cmd, this.platform.config.name);
       });
     } catch (error) {
       const logPrefix = this.sesame.name ?? this.sesame.uuid;
@@ -187,15 +167,11 @@ export class Sesame3 {
   }
 
   private async subscribe() {
-    this.#client.subscribe(
-      this.sesame,
-      this.platform.config.updateInterval * 1000,
-      (shadow: Sesame2Shadow) => {
-        this.setLockStatus({
-          CHSesame2Status: shadow.CHSesame2Status,
-          batteryPercentage: shadow.batteryPercentage,
-        });
-      },
-    );
+    this.#client.subscribe((shadow: Sesame2Shadow) => {
+      this.setLockStatus({
+        CHSesame2Status: shadow.CHSesame2Status,
+        batteryPercentage: shadow.batteryPercentage,
+      });
+    });
   }
 }

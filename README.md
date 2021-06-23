@@ -2,6 +2,11 @@
 
 Homebridge plugin for SESAME3.  
 
+## Features
+
+- Real time status update.
+- SESAME bot support.
+
 ## Install
 
 ```
@@ -32,15 +37,11 @@ Configure with [Homebridge Config UI X](https://github.com/oznu/homebridge-confi
           "uuid": "UUID from Sesame.app",
           "secret": "Key Secret"
         }
-      ],
-      "updateInterval": 60
+      ]
     }
   ]
 }
 ```
-_Note_
-
-- `updateInterval`: Update sesame status interval(second).
 
 ## Credits
 
