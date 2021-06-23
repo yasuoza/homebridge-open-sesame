@@ -9,7 +9,6 @@ import {
   Characteristic,
 } from "homebridge";
 
-import { Server } from "./Server";
 import { Sesame3 } from "./accessories/Sesame3";
 import {
   PLATFORM_NAME,
@@ -25,8 +24,6 @@ export class OpenSesame implements DynamicPlatformPlugin {
 
   public readonly config: OpenSesamePlatformConfig;
   public readonly accessories: Array<PlatformAccessory> = [];
-
-  #server: Server | undefined;
 
   constructor(
     public readonly log: Logger,
@@ -49,19 +46,10 @@ export class OpenSesame implements DynamicPlatformPlugin {
 
     this.config = config;
 
-    if (typeof this.config.webhookPort === "number") {
-      this.log.info(
-        `Webhook server is listening on ${this.config.webhookPort}`,
-      );
-
-      this.#server = new Server(this.config.webhookPort);
-    }
-
     this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
       this.log.debug("Executed didFinishLaunching callback");
 
       this.initializeSesameLocks();
-      this.#server?.listen();
     });
   }
 
@@ -110,25 +98,22 @@ export class OpenSesame implements DynamicPlatformPlugin {
         (accessory) => accessory.UUID === uuid,
       );
 
-      let sesame3: Sesame3;
       if (existingAccessory) {
         this.log.info(
           "Restoring existing accessory from cache:",
           existingAccessory.displayName,
         );
-        sesame3 = new Sesame3(this, existingAccessory, sesame);
+        new Sesame3(this, existingAccessory, sesame);
       } else {
         this.log.info("Adding new accessory:", sesame.uuid);
 
         const name = sesame.name ?? sesame.uuid;
         const accessory = new this.api.platformAccessory(name, uuid);
-        sesame3 = new Sesame3(this, accessory, sesame);
+        new Sesame3(this, accessory, sesame);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
           accessory,
         ]);
       }
-
-      this.#server?.locks.set(sesame.uuid.toUpperCase(), sesame3);
     }
   }
 }

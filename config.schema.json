@@ -51,21 +51,6 @@
           }
         }
       }
-    },
-    "updateInterval": {
-      "title": "Status update interval second",
-      "description": "Update device status second. Greater than 60(sec) is recommended",
-      "type": "integer",
-      "required": true,
-      "default": 60,
-      "minimum": 10,
-      "maximum": 600
-    },
-    "webhookPort": {
-      "title": "port for webhook server",
-      "description": "Leave blank if wehook server is not needed",
-      "type": "integer",
-      "required": false
     }
   },
   "layout": [
@@ -89,16 +74,6 @@
         "locks[].name",
         "locks[].uuid",
         "locks[].secret"
-      ]
-    },
-    {
-      "type": "fieldset",
-      "title": "Advanced",
-      "expandable": true,
-      "expanded": false,
-      "items": [
-        "updateInterval",
-        "webhookPort"
       ]
     }
   ]

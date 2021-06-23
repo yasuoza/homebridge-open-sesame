@@ -40,7 +40,6 @@
     "aws-iot-device-sdk": "^2.2.8",
     "aws4-axios": "^2.3.4",
     "axios": "^0.21.1",
-    "fastify": "^3.18.0",
     "node-aes-cmac": "^0.1.1"
   },
   "devDependencies": {
