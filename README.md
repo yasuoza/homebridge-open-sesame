@@ -4,7 +4,8 @@ Homebridge plugin for SESAME3.
 
 ## Features
 
-- Real time status update.
+- Real time status update support(even when manual lock/unlock).
+- No status polling(`Limit Exceeded` avoidance)
 - SESAME bot support.
 
 ## Install
