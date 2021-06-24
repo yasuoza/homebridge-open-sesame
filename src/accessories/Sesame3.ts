@@ -28,6 +28,7 @@ export class Sesame3 {
       this.platform.config.apiKey,
       this.platform.config.clientID,
       this.platform.log,
+      Sesame3,
     );
 
     this.#mutex = new Mutex();

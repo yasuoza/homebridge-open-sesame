@@ -17,4 +17,5 @@ export interface OpenSesamePlatformConfig extends PlatformConfig {
   apiKey: string;
   clientID: string;
   locks: Array<CHDevice> | undefined;
+  bots: Array<CHDevice> | undefined;
 }

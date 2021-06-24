@@ -11,6 +11,8 @@ import { Logger } from "homebridge";
 import { aesCmac } from "node-aes-cmac";
 import { TextDecoder } from "util";
 
+import { Sesame3 } from "./accessories/Sesame3";
+import { SesameBot } from "./accessories/SesameBot";
 import { Sesame2Shadow } from "./types/API";
 import { Command } from "./types/Command";
 import { CHDevice } from "./types/Device";
@@ -32,6 +34,7 @@ export class CognitoClient {
     apiKey: string,
     clientID: string,
     private readonly log: Logger,
+    private readonly deviceType: typeof Sesame3 | typeof SesameBot,
   ) {
     this.#sesame = sesame;
     this.#apiKey = apiKey;
@@ -223,12 +226,29 @@ export class CognitoClient {
   private convertToSesame2Shadow(mechst: string): Sesame2Shadow {
     const data = Uint8Array.from(Buffer.from(mechst, "hex"));
 
-    const voltages = [6.0, 5.8, 5.7, 5.6, 5.4, 5.2, 5.1, 5.0, 4.8, 4.6];
-    const percentages = [
-      100.0, 50.0, 40.0, 32.0, 21.0, 13.0, 10.0, 7.0, 3.0, 0.0,
-    ];
-    const voltage =
-      (Buffer.from(data.slice(0, 2)).readUIntLE(0, 2) * 7.2) / 1023;
+    let voltages: Array<number>;
+    let percentages: Array<number>;
+    let voltage: number;
+    let position: number;
+
+    switch (this.deviceType) {
+      case SesameBot:
+        voltages = [3.0, 2.9, 2.8, 2.8, 2.7, 2.6, 2.5, 2.5, 2.4, 2.3];
+        percentages = [
+          100.0, 50.0, 40.0, 32.0, 21.0, 13.0, 10.0, 7.0, 3.0, 0.0,
+        ];
+        voltage = (Buffer.from(data.slice(0, 2)).readUIntLE(0, 2) * 3.6) / 1023;
+        position = 0;
+        break;
+      default:
+        voltages = [6.0, 5.8, 5.7, 5.6, 5.4, 5.2, 5.1, 5.0, 4.8, 4.6];
+        percentages = [
+          100.0, 50.0, 40.0, 32.0, 21.0, 13.0, 10.0, 7.0, 3.0, 0.0,
+        ];
+        voltage = (Buffer.from(data.slice(0, 2)).readUIntLE(0, 2) * 7.2) / 1023;
+        position = Buffer.from(data.slice(4, 6)).readUIntLE(0, 2);
+        break;
+    }
 
     let percentage =
       voltage > voltages[0] ? 100 : voltage < voltages.slice(-1)[0] ? 0 : -1;
@@ -265,7 +285,7 @@ export class CognitoClient {
     return {
       batteryPercentage: percentage,
       batteryVoltage: voltage,
-      position: Buffer.from(data.slice(4, 6)).readUIntLE(0, 2),
+      position: position,
       CHSesame2Status: status,
     };
   }

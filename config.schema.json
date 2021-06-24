@@ -51,6 +51,34 @@
           }
         }
       }
+    },
+    "bots": {
+      "title": "Sesame Bots",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "uuid": {
+            "title": "UUID",
+            "description": "UUID can be found at Sesame app.",
+            "type": "string",
+            "required": true
+          },
+          "secret": {
+            "title": "KEY Secret",
+            "description": "Key Secret. Can be retreived at https://sesame-qr-reader.vercel.app",
+            "type": "string",
+            "required": true,
+            "x-schema-form": {
+              "type": "password"
+            }
+          }
+        }
+      }
     }
   },
   "layout": [
@@ -74,6 +102,19 @@
         "locks[].name",
         "locks[].uuid",
         "locks[].secret"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Sesame Bots",
+      "expandable": true,
+      "expanded": false,
+      "buttonText": "Add Bots",
+      "key": "bots",
+      "items": [
+        "bots[].name",
+        "bots[].uuid",
+        "bots[].secret"
       ]
     }
   ]

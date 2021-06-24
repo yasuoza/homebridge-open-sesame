@@ -10,6 +10,7 @@ import {
 } from "homebridge";
 
 import { Sesame3 } from "./accessories/Sesame3";
+import { SesameBot } from "./accessories/SesameBot";
 import {
   PLATFORM_NAME,
   PLUGIN_NAME,
@@ -39,6 +40,7 @@ export class OpenSesame implements DynamicPlatformPlugin {
         apiKey: "",
         clientID: "",
         locks: [],
+        bots: [],
       };
       return;
     }
@@ -49,6 +51,7 @@ export class OpenSesame implements DynamicPlatformPlugin {
       this.log.debug("Executed didFinishLaunching callback");
 
       this.initializeLocks();
+      this.initializeBots();
     });
   }
 
@@ -59,10 +62,12 @@ export class OpenSesame implements DynamicPlatformPlugin {
   configureAccessory(accessory: PlatformAccessory) {
     this.log.info("Loading accessory from cache:", accessory.displayName);
 
-    const existingConfig = this.config.locks.find(
-      (sesame: SesameLock) =>
+    const devices = (this.config.locks ?? []).concat(this.config.bots ?? []);
+    const existingConfig = devices.find(
+      (sesame: CHDevice) =>
         this.api.hap.uuid.generate(sesame.uuid) === accessory.UUID,
     );
+
     if (!existingConfig) {
       this.api.on("didFinishLaunching", () => {
         this.log.info(
@@ -107,6 +112,34 @@ export class OpenSesame implements DynamicPlatformPlugin {
         const name = sesame.name ?? sesame.uuid;
         const accessory = new this.api.platformAccessory(name, uuid);
         new Sesame3(this, accessory, sesame);
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
+          accessory,
+        ]);
+      }
+    }
+  }
+
+  private initializeBots() {
+    const sesameBots: Array<CHDevice> = this.config.bots ?? [];
+
+    for (const sesame of sesameBots) {
+      const uuid = this.api.hap.uuid.generate(sesame.uuid);
+      const existingAccessory = this.accessories.find(
+        (accessory) => accessory.UUID === uuid,
+      );
+
+      if (existingAccessory) {
+        this.log.info(
+          "Restoring existing accessory from cache:",
+          existingAccessory.displayName,
+        );
+        new SesameBot(this, existingAccessory, sesame);
+      } else {
+        this.log.info("Adding new accessory:", sesame.uuid);
+
+        const name = sesame.name ?? sesame.uuid;
+        const accessory = new this.api.platformAccessory(name, uuid);
+        new SesameBot(this, accessory, sesame);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
           accessory,
         ]);
