@@ -22,30 +22,36 @@ const APIGW_URL =
 const IOT_EP = "a3i4hui4gxwoo8-ats.iot.ap-northeast-1.amazonaws.com";
 
 export class CognitoClient {
-  readonly #sesame: CHDevice;
+  readonly #device: CHDevice;
+  readonly #deviceType: typeof Sesame3 | typeof SesameBot;
   readonly #apiKey: string;
   readonly #clientID: string;
 
   #credential: Credentials;
-  #device: awsIot.device | undefined;
+  #connection: awsIot.device | undefined = undefined;
+  #updateCredentialTimer: NodeJS.Timer | undefined = undefined;
 
   constructor(
-    sesame: CHDevice,
+    deviceType: typeof Sesame3 | typeof SesameBot,
+    device: CHDevice,
     apiKey: string,
     clientID: string,
     private readonly log: Logger,
-    private readonly deviceType: typeof Sesame3 | typeof SesameBot,
   ) {
-    this.#sesame = sesame;
+    this.#deviceType = deviceType;
+    this.#device = device;
     this.#apiKey = apiKey;
     this.#clientID = clientID;
 
     this.#credential = {};
-    this.#device = undefined;
+  }
+
+  shutdown(): void {
+    this.#connection?.end(true);
   }
 
   async getShadow(): Promise<Sesame2Shadow> {
-    this.log.debug(`GET /things/sesame2/shadow?name=${this.#sesame.uuid}`);
+    this.log.debug(`GET /things/sesame2/shadow?name=${this.#device.uuid}`);
 
     if (this.credentialExpired) {
       await this.authenticate();
@@ -65,33 +71,83 @@ export class CognitoClient {
     );
     client.interceptors.request.use(interceptor);
     const res = await client.get(
-      `https://${IOT_EP}/things/sesame2/shadow?name=${this.#sesame.uuid}`,
+      `https://${IOT_EP}/things/sesame2/shadow?name=${this.#device.uuid}`,
     );
 
     const shadow = this.convertToSesame2Shadow(res.data.state.reported.mechst);
-    this.log.debug(`${this.#sesame.uuid}:`, JSON.stringify(shadow));
+    this.log.debug(`${this.#device.uuid}:`, JSON.stringify(shadow));
 
     return shadow;
   }
 
   async subscribe(callback: (shadow: Sesame2Shadow) => void): Promise<void> {
-    await this.connectAndSubscribe(callback);
+    if (this.credentialExpired) {
+      await this.authenticate();
+    }
 
-    // Websocket connection will be closed after 24 hours based on aws iot quota.
-    // So, re-establish websocket connection after 23 hours.
-    // see https://docs.aws.amazon.com/general/latest/gr/iot-core.html#iot-protocol-limits
-    const expire = 23 * 60 * 60 * 1000; // milliseconds
-    setInterval(() => {
-      this.log.info(`${this.#sesame.uuid}: reconnect mqtt on schedule`);
+    this.#connection = new awsIot.device({
+      host: IOT_EP,
+      protocol: "wss",
+      clean: false,
+      clientId: this.#device.uuid,
+      accessKeyId: this.#credential.AccessKeyId!,
+      secretKey: this.#credential.SecretKey!,
+      sessionToken: this.#credential.SessionToken!,
+    });
 
-      this.#device?.end(false, () => {
-        this.connectAndSubscribe(callback);
+    const decoder = new TextDecoder("utf8");
+    this.#connection.on("message", (_, payload: ArrayBuffer) => {
+      const data = decoder.decode(payload);
+      if (typeof data === "undefined") {
+        return;
+      }
+
+      const json = JSON.parse(data);
+      const mechst = json.state.reported.mechst;
+      if (typeof mechst !== "string") {
+        return;
+      }
+
+      const shadow = this.convertToSesame2Shadow(mechst);
+      this.log.debug(`${this.#device.uuid}:`, JSON.stringify(shadow));
+      callback(shadow);
+    });
+
+    this.#connection.on("connect", () => {
+      this.log.info(`${this.#device.uuid}: mqtt connection is established`);
+
+      // Set timer to update credential for mqtt reconnection.
+      // Websocket connection will be closed after 24 hours based on aws iot quota.
+      // see https://docs.aws.amazon.com/general/latest/gr/iot-core.html#iot-protocol-limits
+      this.setUpdateCredentailTimer();
+
+      const topic = `$aws/things/sesame2/shadow/name/${
+        this.#device.uuid
+      }/update/accepted`;
+      this.#connection?.subscribe(topic, { qos: 1 }, (err) => {
+        if (!err) {
+          this.log.debug(`${this.#device.uuid}: subscribed to ${topic}`);
+        }
       });
-    }, expire);
+    });
+
+    this.#connection
+      .on("error", (error) => {
+        this.log.error(`${this.#device.uuid}: mqtt error:`, error);
+      })
+      .on("reconnect", async () => {
+        this.log.info(`${this.#device.uuid}: mqtt connection will reconnect`);
+
+        // Prepare for mqtt reconnetion
+        this.updateWebSocketCredentials();
+      })
+      .on("close", async () => {
+        this.log.info(`${this.#device.uuid}: mqtt connection is closed`);
+      });
   }
 
   async postCmd(cmd: Command, historyName?: string): Promise<boolean> {
-    this.log.debug(`POST /device/v1/iot/sesame2/${this.#sesame.uuid}`);
+    this.log.debug(`POST /device/v1/iot/sesame2/${this.#device.uuid}`);
 
     if (this.credentialExpired) {
       await this.authenticate();
@@ -114,10 +170,10 @@ export class CognitoClient {
       ),
     );
 
-    const url = `${APIGW_URL}/device/v1/iot/sesame2/${this.#sesame.uuid}`;
+    const url = `${APIGW_URL}/device/v1/iot/sesame2/${this.#device.uuid}`;
     const history = historyName ?? "Homebridge";
     const base64_history = Buffer.from(history).toString("base64");
-    const sign = this.generateRandomTag(this.#sesame.secret).slice(0, 8);
+    const sign = this.generateRandomTag(this.#device.secret).slice(0, 8);
     const res = await instance.post(url, {
       cmd: cmd,
       history: base64_history,
@@ -148,62 +204,29 @@ export class CognitoClient {
     this.#credential = (await cognitoClient.send(credCommand)).Credentials!;
   }
 
-  private async connectAndSubscribe(callback: (shadow: Sesame2Shadow) => void) {
-    if (this.credentialExpired) {
+  private setUpdateCredentailTimer(): void {
+    if (this.#updateCredentialTimer) {
+      clearTimeout(this.#updateCredentialTimer);
+    }
+
+    // 23 hours 30 minutes
+    const time = 23.5 * 60 * 60 * 1000;
+    this.#updateCredentialTimer = setTimeout(() => {
+      this.updateWebSocketCredentials();
+    }, time);
+  }
+
+  private async updateWebSocketCredentials(): Promise<void> {
+    if (this.credentialExpired || typeof this.#credential === "undefined") {
       await this.authenticate();
     }
 
-    this.#device = new awsIot.device({
-      host: IOT_EP,
-      protocol: "wss",
-      clean: false,
-      clientId: this.#sesame.uuid,
-      accessKeyId: this.#credential.AccessKeyId!,
-      secretKey: this.#credential.SecretKey!,
-      sessionToken: this.#credential.SessionToken!,
-    });
-
-    const decoder = new TextDecoder("utf8");
-    this.#device.on("message", (_, payload: ArrayBuffer) => {
-      const data = decoder.decode(payload);
-      if (typeof data === "undefined") {
-        return;
-      }
-
-      const json = JSON.parse(data);
-      const mechst = json.state.reported.mechst;
-      if (typeof mechst !== "string") {
-        return;
-      }
-
-      const shadow = this.convertToSesame2Shadow(mechst);
-      this.log.debug(`${this.#sesame.uuid}:`, JSON.stringify(shadow));
-      callback(shadow);
-    });
-
-    this.#device.on("connect", () => {
-      this.log.info(`${this.#sesame.uuid}: mqtt connection is established`);
-
-      const topic = `$aws/things/sesame2/shadow/name/${
-        this.#sesame.uuid
-      }/update/accepted`;
-      this.#device?.subscribe(topic, { qos: 1 }, (err) => {
-        if (!err) {
-          this.log.debug(`${this.#sesame.uuid}: subscribed to ${topic}`);
-        }
-      });
-    });
-
-    this.#device
-      .on("error", (error) => {
-        this.log.error(`${this.#sesame.uuid}: mqtt error:`, error);
-      })
-      .on("reconnect", () => {
-        this.log.debug(`${this.#sesame.uuid}: mqtt connection is reconnected`);
-      })
-      .on("close", () => {
-        this.log.info(`${this.#sesame.uuid}: mqtt connection is closed`);
-      });
+    this.#connection?.updateWebSocketCredentials(
+      this.#credential.AccessKeyId!,
+      this.#credential.SecretKey!,
+      this.#credential.SessionToken!,
+      this.#credential.Expiration!,
+    );
   }
 
   // https://doc.candyhouse.co/ja/SesameAPI
@@ -231,7 +254,7 @@ export class CognitoClient {
     let voltage: number;
     let position: number;
 
-    switch (this.deviceType) {
+    switch (this.#deviceType) {
       case SesameBot:
         voltages = [3.0, 2.9, 2.8, 2.8, 2.7, 2.6, 2.5, 2.5, 2.4, 2.3];
         percentages = [

@@ -1,5 +1,10 @@
 import { Mutex } from "async-mutex";
-import { Service, PlatformAccessory, CharacteristicValue } from "homebridge";
+import {
+  APIEvent,
+  Service,
+  PlatformAccessory,
+  CharacteristicValue,
+} from "homebridge";
 
 import { CognitoClient } from "../CognitoClient";
 import { OpenSesame } from "../platform";
@@ -7,7 +12,6 @@ import { PLATFORM_NAME } from "../settings";
 import { Sesame2Shadow } from "../types/API";
 import { Command } from "../types/Command";
 import { CHDevice } from "../types/Device";
-import { sleep } from "../util";
 
 export class SesameBot {
   readonly #client: CognitoClient;
@@ -25,12 +29,16 @@ export class SesameBot {
     private readonly bot: CHDevice,
   ) {
     this.#client = new CognitoClient(
+      SesameBot,
       this.bot,
       this.platform.config.apiKey,
       this.platform.config.clientID,
       this.platform.log,
-      SesameBot,
     );
+
+    this.platform.api.on(APIEvent.SHUTDOWN, () => {
+      this.#client.shutdown();
+    });
 
     this.#mutex = new Mutex();
 
