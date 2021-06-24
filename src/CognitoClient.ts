@@ -11,17 +11,16 @@ import { Logger } from "homebridge";
 import { aesCmac } from "node-aes-cmac";
 import { TextDecoder } from "util";
 
-import { Client } from "./interfaces/Client";
 import { Sesame2Shadow } from "./types/API";
 import { Command } from "./types/Command";
-import { SesameLock } from "./types/Device";
+import { CHDevice } from "./types/Device";
 
 const APIGW_URL =
   "https://jhcr1i3ecb.execute-api.ap-northeast-1.amazonaws.com/prod";
 const IOT_EP = "a3i4hui4gxwoo8-ats.iot.ap-northeast-1.amazonaws.com";
 
-export class CognitoClient implements Client {
-  readonly #sesame: SesameLock;
+export class CognitoClient {
+  readonly #sesame: CHDevice;
   readonly #apiKey: string;
   readonly #clientID: string;
 
@@ -29,7 +28,7 @@ export class CognitoClient implements Client {
   #device: awsIot.device | undefined;
 
   constructor(
-    sesame: SesameLock,
+    sesame: CHDevice,
     apiKey: string,
     clientID: string,
     private readonly log: Logger,

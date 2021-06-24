@@ -15,7 +15,7 @@ import {
   PLUGIN_NAME,
   OpenSesamePlatformConfig,
 } from "./settings";
-import { SesameLock } from "./types/Device";
+import { CHDevice } from "./types/Device";
 
 export class OpenSesame implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
@@ -39,7 +39,6 @@ export class OpenSesame implements DynamicPlatformPlugin {
         apiKey: "",
         clientID: "",
         locks: [],
-        updateInterval: Number.POSITIVE_INFINITY,
       };
       return;
     }
@@ -49,7 +48,7 @@ export class OpenSesame implements DynamicPlatformPlugin {
     this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
       this.log.debug("Executed didFinishLaunching callback");
 
-      this.initializeSesameLocks();
+      this.initializeLocks();
     });
   }
 
@@ -84,13 +83,11 @@ export class OpenSesame implements DynamicPlatformPlugin {
   private verifyConfig(
     config: PlatformConfig | OpenSesamePlatformConfig,
   ): config is OpenSesamePlatformConfig {
-    return ["apiKey", "clientID", "locks", "updateInterval"].every(
-      (key: string) => key in config,
-    );
+    return ["apiKey", "clientID"].every((key: string) => key in config);
   }
 
-  private initializeSesameLocks() {
-    const sesameLocks: Array<SesameLock> = this.config.locks;
+  private initializeLocks() {
+    const sesameLocks: Array<CHDevice> = this.config.locks ?? [];
 
     for (const sesame of sesameLocks) {
       const uuid = this.api.hap.uuid.generate(sesame.uuid);

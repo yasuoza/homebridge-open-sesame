@@ -1,6 +1,6 @@
 import { PlatformConfig } from "homebridge";
 
-import { SesameLock } from "./types/Device";
+import { CHDevice } from "./types/Device";
 
 /**
  * This is the name of the platform that users will use to register the plugin in the Homebridge config.json
@@ -16,7 +16,5 @@ export const PLUGIN_NAME = "homebridge-open-sesame";
 export interface OpenSesamePlatformConfig extends PlatformConfig {
   apiKey: string;
   clientID: string;
-  locks: Array<SesameLock>;
-  updateInterval: number;
-  webhookPort?: number;
+  locks: Array<CHDevice> | undefined;
 }
