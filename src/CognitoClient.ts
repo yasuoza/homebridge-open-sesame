@@ -216,9 +216,7 @@ export class CognitoClient {
     }, time);
   }
 
-  private async updateWebSocketCredentials(
-    force = false,
-  ): Promise<void> {
+  private async updateWebSocketCredentials(force = false): Promise<void> {
     if (
       force ||
       typeof this.#credential === "undefined" ||
