@@ -217,7 +217,7 @@ export class CognitoClient {
   }
 
   private async updateWebSocketCredentials(
-    force: boolean = false,
+    force = false,
   ): Promise<void> {
     if (
       force ||
