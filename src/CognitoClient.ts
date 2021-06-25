@@ -212,12 +212,18 @@ export class CognitoClient {
     // 23 hours 30 minutes
     const time = 23.5 * 60 * 60 * 1000;
     this.#updateCredentialTimer = setTimeout(() => {
-      this.updateWebSocketCredentials();
+      this.updateWebSocketCredentials(true);
     }, time);
   }
 
-  private async updateWebSocketCredentials(): Promise<void> {
-    if (this.credentialExpired || typeof this.#credential === "undefined") {
+  private async updateWebSocketCredentials(
+    force: boolean = false,
+  ): Promise<void> {
+    if (
+      force ||
+      typeof this.#credential === "undefined" ||
+      this.credentialExpired
+    ) {
       await this.authenticate();
     }
 
