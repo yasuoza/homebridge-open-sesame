@@ -209,7 +209,7 @@ export class CognitoClient {
       clearTimeout(this.#updateCredentialTimer);
     }
 
-    // Update credential 2.5 minutes before expire(24 hour loop)
+    // Update credential 2.5 minutes before expire(proceeds 1 hour a day)
     const now = new Date().getTime();
     const expire =
       this.#credential.Expiration?.getTime() ?? now + 60 * 60 * 1000;
