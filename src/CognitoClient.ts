@@ -85,6 +85,11 @@ export class CognitoClient {
       await this.authenticate();
     }
 
+    // Set timer to update credential for mqtt reconnection.
+    // Websocket connection will be closed after 24 hours based on aws iot quota.
+    // see https://docs.aws.amazon.com/general/latest/gr/iot-core.html#iot-protocol-limits
+    this.setUpdateCredentialTimer();
+
     this.#connection = new awsIot.device({
       host: IOT_EP,
       protocol: "wss",
@@ -116,11 +121,6 @@ export class CognitoClient {
     this.#connection.on("connect", () => {
       this.log.info(`${this.#device.uuid}: mqtt connection is established`);
 
-      // Set timer to update credential for mqtt reconnection.
-      // Websocket connection will be closed after 24 hours based on aws iot quota.
-      // see https://docs.aws.amazon.com/general/latest/gr/iot-core.html#iot-protocol-limits
-      this.setUpdateCredentailTimer();
-
       const topic = `$aws/things/sesame2/shadow/name/${
         this.#device.uuid
       }/update/accepted`;
@@ -138,7 +138,7 @@ export class CognitoClient {
       .on("reconnect", async () => {
         this.log.info(`${this.#device.uuid}: mqtt connection will reconnect`);
 
-        // Prepare for mqtt reconnetion
+        // Ensure to use not expired credential for mqtt reconnetion
         this.updateWebSocketCredentials();
       })
       .on("close", async () => {
@@ -204,16 +204,23 @@ export class CognitoClient {
     this.#credential = (await cognitoClient.send(credCommand)).Credentials!;
   }
 
-  private setUpdateCredentailTimer(): void {
+  private setUpdateCredentialTimer(): void {
     if (this.#updateCredentialTimer) {
       clearTimeout(this.#updateCredentialTimer);
     }
 
-    // 23 hours 30 minutes
-    const time = 23.5 * 60 * 60 * 1000;
-    this.#updateCredentialTimer = setTimeout(() => {
-      this.updateWebSocketCredentials(true);
-    }, time);
+    // Update credential 2.5 minutes before expire(24 hour loop)
+    const now = new Date().getTime();
+    const expire =
+      this.#credential.Expiration?.getTime() ?? now + 60 * 60 * 1000;
+    const timeout = expire - now - 150 * 1000;
+
+    // Update credential periodically
+    this.#updateCredentialTimer = setTimeout(async () => {
+      this.log.debug("Renew aws credential timer fired");
+      await this.updateWebSocketCredentials(true);
+      this.setUpdateCredentialTimer();
+    }, timeout);
   }
 
   private async updateWebSocketCredentials(force = false): Promise<void> {
