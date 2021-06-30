@@ -10,6 +10,7 @@ import axios from "axios";
 import { Logger } from "homebridge";
 import { aesCmac } from "node-aes-cmac";
 import { TextDecoder } from "util";
+import { v4 as uuidv4 } from "uuid";
 
 import { Sesame3 } from "./accessories/Sesame3";
 import { SesameBot } from "./accessories/SesameBot";
@@ -94,7 +95,7 @@ export class CognitoClient {
       host: IOT_EP,
       protocol: "wss",
       clean: false,
-      clientId: this.#device.uuid,
+      clientId: uuidv4(),
       accessKeyId: this.#credential.AccessKeyId!,
       secretKey: this.#credential.SecretKey!,
       sessionToken: this.#credential.SessionToken!,

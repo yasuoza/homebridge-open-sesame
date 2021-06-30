@@ -40,13 +40,15 @@
     "aws-iot-device-sdk": "^2.2.8",
     "aws4-axios": "^2.3.4",
     "axios": "^0.21.1",
-    "node-aes-cmac": "^0.1.1"
+    "node-aes-cmac": "^0.1.1",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "2.0.2",
     "@types/aws-iot-device-sdk": "^2.2.2",
     "@types/jest": "26.0.23",
     "@types/node": "15.12.5",
+    "@types/uuid": "^8.3.0",
     "@typescript-eslint/eslint-plugin": "4.28.1",
     "@typescript-eslint/parser": "4.28.1",
     "eslint": "7.29.0",
