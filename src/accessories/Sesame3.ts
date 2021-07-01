@@ -140,9 +140,6 @@ export class Sesame3 {
         ? this.platform.Characteristic.LockCurrentState.SECURED
         : this.platform.Characteristic.LockCurrentState.UNSECURED;
     this.#lockService
-      .getCharacteristic(this.platform.Characteristic.LockTargetState)
-      .updateValue(this.getLockState());
-    this.#lockService
       .getCharacteristic(this.platform.Characteristic.LockCurrentState)
       .updateValue(this.getLockState());
 
