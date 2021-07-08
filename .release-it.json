@@ -7,6 +7,7 @@
     "releaseName": "${version}"
   },
   "git": {
+    "changelog": "git log --no-merges --pretty=format:\"* %s (%h)\" ${from}...${to}",
     "requireCleanWorkingDir": true,
     "commitMessage": "v${version}"
   }
