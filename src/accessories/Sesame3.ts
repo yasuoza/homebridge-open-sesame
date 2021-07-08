@@ -127,24 +127,38 @@ export class Sesame3 {
     }
   }
 
-  private setLockStatus({
-    CHSesame2Status,
-    batteryPercentage,
-  }: {
-    CHSesame2Status: string;
-    batteryPercentage: number;
-  }): void {
+  private setLockStatus(shadow: Sesame2Shadow): void {
+    const originalState = this.#lockState;
+    const status = shadow.CHSesame2Status;
+
+    if (!status.locked && status.unlocked) {
+      this.#lockState = this.platform.Characteristic.LockCurrentState.UNSECURED;
+    }
+    if (status.locked && !status.unlocked) {
+      this.#lockState = this.platform.Characteristic.LockCurrentState.SECURED;
+    }
+
+    if (this.#lockState === originalState) {
+      return;
+    }
+
+    this.platform.log.debug(
+      "[UPDATE]",
+      this.sesame.uuid,
+      ":",
+      JSON.stringify(shadow),
+    );
+
     // Update lock service
-    this.#lockState =
-      CHSesame2Status === "locked"
-        ? this.platform.Characteristic.LockCurrentState.SECURED
-        : this.platform.Characteristic.LockCurrentState.UNSECURED;
+    this.#lockService
+      .getCharacteristic(this.platform.Characteristic.LockTargetState)
+      .updateValue(this.getLockState());
     this.#lockService
       .getCharacteristic(this.platform.Characteristic.LockCurrentState)
       .updateValue(this.getLockState());
 
     // Update battery service
-    this.#batteryLevel = batteryPercentage;
+    this.#batteryLevel = shadow.batteryPercentage;
     this.#batteryService
       .getCharacteristic(this.platform.Characteristic.BatteryLevel)
       .updateValue(this.getBatteryLevel());
@@ -155,18 +169,12 @@ export class Sesame3 {
 
   private async updateToLatestStatus(): Promise<void> {
     const shadow = await this.#client.getShadow();
-    this.setLockStatus({
-      CHSesame2Status: shadow.CHSesame2Status,
-      batteryPercentage: shadow.batteryPercentage,
-    });
+    this.setLockStatus(shadow);
   }
 
   private async subscribe() {
     this.#client.subscribe((shadow: Sesame2Shadow) => {
-      this.setLockStatus({
-        CHSesame2Status: shadow.CHSesame2Status,
-        batteryPercentage: shadow.batteryPercentage,
-      });
+      this.setLockStatus(shadow);
     });
   }
 }

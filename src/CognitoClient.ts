@@ -304,24 +304,14 @@ export class CognitoClient {
       }
     }
 
-    let status: "locked" | "unlocked" | "moved";
-    switch (true) {
-      case (data[7] & 2) > 0:
-        status = "locked";
-        break;
-      case (data[7] & 4) > 0:
-        status = "unlocked";
-        break;
-      default:
-        status = "moved";
-        break;
-    }
-
     return {
       batteryPercentage: percentage,
       batteryVoltage: voltage,
       position: position,
-      CHSesame2Status: status,
+      CHSesame2Status: {
+        locked: (data[7] & 2) > 0,
+        unlocked: (data[7] & 4) > 0,
+      },
     };
   }
 }

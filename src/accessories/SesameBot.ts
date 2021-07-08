@@ -111,21 +111,15 @@ export class SesameBot {
     return this.#batteryLevel < 20;
   }
 
-  private setSwitchStatus({
-    CHSesame2Status,
-    batteryPercentage,
-  }: {
-    CHSesame2Status: string;
-    batteryPercentage: number;
-  }): void {
+  private setSwitchStatus(shadow: Sesame2Shadow): void {
     // Update lock service
-    this.#on = CHSesame2Status === "locked";
+    this.#on = shadow.CHSesame2Status.locked;
     this.#switchService
       .getCharacteristic(this.platform.Characteristic.On)
       .updateValue(this.getOn());
 
     // Update battery service
-    this.#batteryLevel = batteryPercentage;
+    this.#batteryLevel = shadow.batteryPercentage;
     this.#batteryService
       .getCharacteristic(this.platform.Characteristic.BatteryLevel)
       .updateValue(this.getBatteryLevel());
@@ -137,18 +131,12 @@ export class SesameBot {
   private async updateToLatestStatus(): Promise<void> {
     const shadow = await this.#client.getShadow();
 
-    this.setSwitchStatus({
-      CHSesame2Status: shadow.CHSesame2Status,
-      batteryPercentage: shadow.batteryPercentage,
-    });
+    this.setSwitchStatus(shadow);
   }
 
   private subscribe() {
     this.#client.subscribe((shadow: Sesame2Shadow) => {
-      this.setSwitchStatus({
-        CHSesame2Status: shadow.CHSesame2Status,
-        batteryPercentage: shadow.batteryPercentage,
-      });
+      this.setSwitchStatus(shadow);
     });
   }
 }
