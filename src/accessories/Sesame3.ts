@@ -128,15 +128,17 @@ export class Sesame3 {
   }
 
   private setLockStatus(shadow: Sesame2Shadow): void {
-    const originalState = this.#lockState;
     const status = shadow.CHSesame2Status;
 
-    if (!status.locked && status.unlocked) {
-      this.#lockState = this.platform.Characteristic.LockCurrentState.UNSECURED;
+    // locked xor unlocked
+    if (status.locked === status.unlocked) {
+      return;
     }
-    if (status.locked && !status.unlocked) {
-      this.#lockState = this.platform.Characteristic.LockCurrentState.SECURED;
-    }
+
+    const originalState = this.#lockState;
+    this.#lockState = status.locked
+      ? this.platform.Characteristic.LockCurrentState.SECURED
+      : this.platform.Characteristic.LockCurrentState.UNSECURED;
 
     if (this.#lockState === originalState) {
       return;
