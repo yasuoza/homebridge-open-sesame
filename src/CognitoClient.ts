@@ -95,6 +95,7 @@ export class CognitoClient {
       host: IOT_EP,
       protocol: "wss",
       clean: false,
+      keepalive: 60,
       clientId: uuidv4(),
       accessKeyId: this.#credential.AccessKeyId!,
       secretKey: this.#credential.SecretKey!,
