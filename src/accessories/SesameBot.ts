@@ -9,7 +9,7 @@ import {
 import { CognitoClient } from "../CognitoClient";
 import { OpenSesame } from "../platform";
 import { PLATFORM_NAME } from "../settings";
-import { Sesame2Shadow } from "../types/API";
+import { CHSesame2MechStatus } from "../types/API";
 import { Command } from "../types/Command";
 import { CHDevice } from "../types/Device";
 
@@ -19,6 +19,7 @@ export class SesameBot {
 
   readonly #switchService: Service;
   readonly #batteryService: Service;
+  #batteryCritical: boolean;
 
   #on: CharacteristicValue;
   #batteryLevel: number;
@@ -76,6 +77,7 @@ export class SesameBot {
 
     this.#on = 0;
     this.#batteryLevel = 100;
+    this.#batteryCritical = false;
   }
 
   private getOn(): CharacteristicValue {
@@ -111,15 +113,16 @@ export class SesameBot {
     return this.#batteryLevel < 20;
   }
 
-  private setSwitchStatus(shadow: Sesame2Shadow): void {
+  private setSwitchStatus(status: CHSesame2MechStatus): void {
     // Update lock service
-    this.#on = shadow.CHSesame2Status.locked;
+    this.#on = status.isInLockRange;
     this.#switchService
       .getCharacteristic(this.platform.Characteristic.On)
       .updateValue(this.getOn());
 
     // Update battery service
-    this.#batteryLevel = shadow.batteryPercentage;
+    this.#batteryLevel = status.batteryPercentage;
+    this.#batteryCritical = status.isBatteryCritical;
     this.#batteryService
       .getCharacteristic(this.platform.Characteristic.BatteryLevel)
       .updateValue(this.getBatteryLevel());
@@ -129,14 +132,14 @@ export class SesameBot {
   }
 
   private async updateToLatestStatus(): Promise<void> {
-    const shadow = await this.#client.getShadow();
+    const status = await this.#client.getMechStatus();
 
-    this.setSwitchStatus(shadow);
+    this.setSwitchStatus(status);
   }
 
   private subscribe() {
-    this.#client.subscribe((shadow: Sesame2Shadow) => {
-      this.setSwitchStatus(shadow);
+    this.#client.subscribe((status: CHSesame2MechStatus) => {
+      this.setSwitchStatus(status);
     });
   }
 }

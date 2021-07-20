@@ -1,17 +1,18 @@
 import { Sesame3 } from "./accessories/Sesame3";
 import { SesameBot } from "./accessories/SesameBot";
-import { Sesame2Shadow } from "./types/API";
+import { CHSesame2MechStatus } from "./types/API";
 
-export function convertToSesame2Shadow(
+export function convertToSesame2MechStatus(
   deviceType: typeof Sesame3 | typeof SesameBot,
   mechst: string,
-): Sesame2Shadow {
+): CHSesame2MechStatus {
   const data = Uint8Array.from(Buffer.from(mechst, "hex"));
 
   let voltages: Array<number>;
   let percentages: Array<number>;
   let voltage: number;
   let position: number;
+  let target: number;
 
   switch (deviceType) {
     case SesameBot:
@@ -19,12 +20,14 @@ export function convertToSesame2Shadow(
       percentages = [100.0, 50.0, 40.0, 32.0, 21.0, 13.0, 10.0, 7.0, 3.0, 0.0];
       voltage = (Buffer.from(data.slice(0, 2)).readUIntLE(0, 2) * 3.6) / 1023;
       position = 0;
+      target = 0;
       break;
     default:
       voltages = [6.0, 5.8, 5.7, 5.6, 5.4, 5.2, 5.1, 5.0, 4.8, 4.6];
       percentages = [100.0, 50.0, 40.0, 32.0, 21.0, 13.0, 10.0, 7.0, 3.0, 0.0];
       voltage = (Buffer.from(data.slice(0, 2)).readUIntLE(0, 2) * 7.2) / 1023;
       position = Buffer.from(data.slice(4, 6)).readUIntLE(0, 2);
+      target = Buffer.from(data.slice(2, 4)).readUIntLE(0, 2);
       break;
   }
 
@@ -49,10 +52,10 @@ export function convertToSesame2Shadow(
   return {
     batteryPercentage: percentage,
     batteryVoltage: voltage,
+    isBatteryCritical: (data[7] & 32) > 0,
+    isInLockRange: (data[7] & 2) > 0,
+    isInUnlockRange: (data[7] & 4) > 0,
     position: position,
-    CHSesame2Status: {
-      locked: (data[7] & 2) > 0,
-      unlocked: (data[7] & 4) > 0,
-    },
+    target: target,
   };
 }

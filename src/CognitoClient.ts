@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as Util from "./Util";
 import { Sesame3 } from "./accessories/Sesame3";
 import { SesameBot } from "./accessories/SesameBot";
-import { Sesame2Shadow } from "./types/API";
+import { CHSesame2MechStatus } from "./types/API";
 import { Command } from "./types/Command";
 import { CHDevice } from "./types/Device";
 
@@ -52,7 +52,7 @@ export class CognitoClient {
     this.#connection?.end(true);
   }
 
-  async getShadow(): Promise<Sesame2Shadow> {
+  async getMechStatus(): Promise<CHSesame2MechStatus> {
     this.log.debug(`GET /things/sesame2/shadow?name=${this.#device.uuid}`);
 
     if (this.credentialExpired) {
@@ -76,16 +76,18 @@ export class CognitoClient {
       `https://${IOT_EP}/things/sesame2/shadow?name=${this.#device.uuid}`,
     );
 
-    const shadow = Util.convertToSesame2Shadow(
+    const status = Util.convertToSesame2MechStatus(
       this.#deviceType,
       res.data.state.reported.mechst,
     );
-    this.log.debug(`${this.#device.uuid}:`, JSON.stringify(shadow));
+    this.log.debug(`${this.#device.uuid}:`, JSON.stringify(status));
 
-    return shadow;
+    return status;
   }
 
-  async subscribe(callback: (shadow: Sesame2Shadow) => void): Promise<void> {
+  async subscribe(
+    callback: (status: CHSesame2MechStatus) => void,
+  ): Promise<void> {
     if (this.credentialExpired) {
       await this.authenticate();
     }
@@ -119,9 +121,9 @@ export class CognitoClient {
         return;
       }
 
-      const shadow = Util.convertToSesame2Shadow(this.#deviceType, mechst);
-      this.log.debug(`${this.#device.uuid}:`, JSON.stringify(shadow));
-      callback(shadow);
+      const status = Util.convertToSesame2MechStatus(this.#deviceType, mechst);
+      this.log.debug(`${this.#device.uuid}:`, JSON.stringify(status));
+      callback(status);
     });
 
     this.#connection.on("connect", () => {
