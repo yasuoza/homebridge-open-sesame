@@ -96,6 +96,10 @@ export class CognitoClient {
       await this.authenticate();
     }
 
+    if (!this.authenticated) {
+      return;
+    }
+
     // Set timer to update credential for mqtt reconnection.
     // Websocket connection will be closed after 24 hours based on aws iot quota.
     // see https://docs.aws.amazon.com/general/latest/gr/iot-core.html#iot-protocol-limits
