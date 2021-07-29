@@ -80,7 +80,7 @@ export class Sesame3 {
     this.subscribe();
 
     // Initialize accessory characteristics
-    this.#lockState = platform.Characteristic.LockCurrentState.UNKNOWN;
+    this.#lockState = platform.Characteristic.LockCurrentState.SECURED;
     this.#batteryLevel = 100;
     this.#batteryCritical = false;
   }
