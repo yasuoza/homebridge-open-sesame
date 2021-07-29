@@ -144,12 +144,7 @@ export class Sesame3 {
       return;
     }
 
-    this.platform.log.debug(
-      "[UPDATE]",
-      this.sesame.uuid,
-      ":",
-      JSON.stringify(status),
-    );
+    this.platform.log.info(this.sesame.uuid, ":", JSON.stringify(status));
 
     this.#lockState = newLockState;
     this.#batteryLevel = status.batteryPercentage;
@@ -174,7 +169,9 @@ export class Sesame3 {
 
   private async updateToLatestStatus(): Promise<void> {
     const status = await this.#client.getMechStatus();
-    this.setLockStatus(status);
+    if (typeof status !== "undefined") {
+      this.setLockStatus(status);
+    }
   }
 
   private async subscribe() {

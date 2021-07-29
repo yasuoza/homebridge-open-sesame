@@ -52,11 +52,15 @@ export class CognitoClient {
     this.#connection?.end(true);
   }
 
-  async getMechStatus(): Promise<CHSesame2MechStatus> {
+  async getMechStatus(): Promise<CHSesame2MechStatus | undefined> {
     this.log.debug(`GET /things/sesame2/shadow?name=${this.#device.uuid}`);
 
     if (this.credentialExpired) {
       await this.authenticate();
+    }
+
+    if (!this.authenticated) {
+      return;
     }
 
     const client = axios.create();
@@ -199,17 +203,29 @@ export class CognitoClient {
     return expireAt - 60 * 1000 < new Date().getTime();
   }
 
+  private get authenticated(): boolean {
+    return (
+      typeof this.#credential.AccessKeyId !== "undefined" &&
+      typeof this.#credential.SecretKey !== "undefined"
+    );
+  }
+
   private async authenticate(): Promise<void> {
-    const region = this.#clientID.split(":")[0];
-    const cognitoClient = new CognitoIdentityClient({ region: region });
-    const command = new GetIdCommand({ IdentityPoolId: this.#clientID });
+    try {
+      const region = this.#clientID.split(":")[0];
+      const cognitoClient = new CognitoIdentityClient({ region: region });
+      const command = new GetIdCommand({ IdentityPoolId: this.#clientID });
 
-    const data = await cognitoClient.send(command);
+      const data = await cognitoClient.send(command);
 
-    const credCommand = new GetCredentialsForIdentityCommand({
-      IdentityId: data.IdentityId,
-    });
-    this.#credential = (await cognitoClient.send(credCommand)).Credentials!;
+      const credCommand = new GetCredentialsForIdentityCommand({
+        IdentityId: data.IdentityId,
+      });
+      this.#credential = (await cognitoClient.send(credCommand)).Credentials!;
+    } catch (e) {
+      this.log.error("Failed to authenticate.");
+      this.log.debug(e);
+    }
   }
 
   private setUpdateCredentialTimer(): void {

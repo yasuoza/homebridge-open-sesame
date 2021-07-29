@@ -133,8 +133,9 @@ export class SesameBot {
 
   private async updateToLatestStatus(): Promise<void> {
     const status = await this.#client.getMechStatus();
-
-    this.setSwitchStatus(status);
+    if (typeof status !== "undefined") {
+      this.setSwitchStatus(status);
+    }
   }
 
   private subscribe() {
