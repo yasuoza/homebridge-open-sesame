@@ -94,16 +94,24 @@ export class OpenSesame implements DynamicPlatformPlugin {
       return false;
     }
 
+    if (typeof config.locks !== "undefined" && !Array.isArray(config.locks)) {
+      return false;
+    }
+
+    if (typeof config.bots !== "undefined" && !Array.isArray(config.bots)) {
+      return false;
+    }
+
     if (
-      !Array.isArray(config.locks) ||
+      Array.isArray(config.locks) &&
       config.locks.some((lock: CHDevice) => typeof lock.uuid === "undefined")
     ) {
       return false;
     }
 
     if (
-      !Array.isArray(config.bots) ||
-      config.locks.some((bot: CHDevice) => typeof bot.uuid === "undefined")
+      Array.isArray(config.bots) &&
+      config.bots.some((bot: CHDevice) => typeof bot.uuid === "undefined")
     ) {
       return false;
     }
