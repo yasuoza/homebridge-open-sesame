@@ -8,8 +8,17 @@ services:
     ports:
       - 8581:8581
     volumes:
-      - ./homebridge:/homebridge
+      - type: bind
+        source: ./homebridge
+        target: /homebridge
+
       # Development volumes
-      - ./dist:/homebridge/homebridge-open-sesame/dist
-      - ./package.json:/homebridge/homebridge-open-sesame/package.json
-      - ./config.schema.json:/homebridge/homebridge-open-sesame/config.schema.json
+      - type: bind
+        source: ./dist
+        target: /homebridge/homebridge-open-sesame/dist
+      - type: bind
+        source: ./package.json
+        target: /homebridge/homebridge-open-sesame/package.json
+      - type: bind
+        source: ./config.schema.json
+        target: /homebridge/homebridge-open-sesame/config.schema.json
