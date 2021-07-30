@@ -1,6 +1,20 @@
+<p align="center">
+<img src="https://github.com/homebridge/branding/raw/master/logos/homebridge-wordmark-logo-vertical.png" width="150">
+</p>
+
+<span align="center">
+
 # homebridge-open-sesame
 
-Homebridge plugin for SESAME3.  
+[![GitHub Release](https://flat.badgen.net/github/release/yasuoza/homebridge-open-sesame/master?icon=github)](https://github.com/yasuoza/homebridge-open-sesame/releases) [![npm Release](https://flat.badgen.net/npm/v/homebridge-open-sesame?icon=npm)](https://www.npmjs.com/package/homebridge-open-sesame)
+
+[![Lint & Build](https://flat.badgen.net/github/checks/yasuoza/homebridge-open-sesame?icon=github&label=lint%20%26%20build)](https://github.com/yasuoza/homebridge-open-sesame/actions) [![npm Download Total](https://flat.badgen.net/npm/dt/homebridge-open-sesame?icon=npm)](https://www.npmjs.com/package/homebridge-open-sesame)
+
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+
+Homebridge plugin for SESAME3 and SESAME BOT.
+
+</span>
 
 ## Features
 
@@ -34,7 +48,14 @@ Configure with [Homebridge Config UI X](https://github.com/oznu/homebridge-confi
       "clientID": "CLIENT_ID from candyhouse developer site",
       "locks": [
         {
-          "name": "Sesame device name",
+          "name": "SESAME3 name",
+          "uuid": "UUID from Sesame.app",
+          "secret": "Key Secret"
+        }
+      ],
+      "bots": [
+        {
+          "name": "SESAME BOT name",
           "uuid": "UUID from Sesame.app",
           "secret": "Key Secret"
         }
