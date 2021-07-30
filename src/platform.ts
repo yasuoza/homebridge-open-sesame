@@ -34,6 +34,8 @@ export class OpenSesame implements DynamicPlatformPlugin {
     this.log.debug("Finished initializing platform:", config.name);
 
     if (!this.verifyConfig(config)) {
+      this.log.debug("Invalid configuration. Please check your configuration.");
+
       // Dummy data to pass Strict Property Initialization
       this.config = {
         ...config,
@@ -88,7 +90,25 @@ export class OpenSesame implements DynamicPlatformPlugin {
   private verifyConfig(
     config: PlatformConfig | OpenSesamePlatformConfig,
   ): config is OpenSesamePlatformConfig {
-    return ["apiKey", "clientID"].every((key: string) => key in config);
+    if (!["apiKey", "clientID"].every((key: string) => key in config)) {
+      return false;
+    }
+
+    if (
+      !Array.isArray(config.locks) ||
+      config.locks.some((lock: CHDevice) => typeof lock.uuid === "undefined")
+    ) {
+      return false;
+    }
+
+    if (
+      !Array.isArray(config.bots) ||
+      config.locks.some((bot: CHDevice) => typeof bot.uuid === "undefined")
+    ) {
+      return false;
+    }
+
+    return true;
   }
 
   private initializeLocks() {
