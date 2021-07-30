@@ -16,7 +16,7 @@ export function convertToSesame2MechStatus(
 
   switch (deviceType) {
     case SesameBot:
-      voltages = [3.0, 2.9, 2.8, 2.8, 2.7, 2.6, 2.5, 2.5, 2.4, 2.3];
+      voltages = [3.0, 2.9, 2.85, 2.8, 2.7, 2.6, 2.55, 2.5, 2.4, 2.3];
       percentages = [100.0, 50.0, 40.0, 32.0, 21.0, 13.0, 10.0, 7.0, 3.0, 0.0];
       voltage = (Buffer.from(data.slice(0, 2)).readUIntLE(0, 2) * 3.6) / 1023;
       position = 0;
