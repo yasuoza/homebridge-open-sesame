@@ -104,14 +104,20 @@ export class OpenSesame implements DynamicPlatformPlugin {
 
     if (
       Array.isArray(config.locks) &&
-      config.locks.some((lock: CHDevice) => typeof lock.uuid === "undefined")
+      config.locks.some(
+        (lock: CHDevice) =>
+          typeof lock.uuid === "undefined" || lock.uuid.length <= 1,
+      )
     ) {
       return false;
     }
 
     if (
       Array.isArray(config.bots) &&
-      config.bots.some((bot: CHDevice) => typeof bot.uuid === "undefined")
+      config.bots.some(
+        (bot: CHDevice) =>
+          typeof bot.uuid === "undefined" || bot.uuid.length <= 1,
+      )
     ) {
       return false;
     }
