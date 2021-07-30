@@ -11,6 +11,8 @@
 [![Lint & Build](https://flat.badgen.net/github/checks/yasuoza/homebridge-open-sesame?icon=github&label=lint%20%26%20build)](https://github.com/yasuoza/homebridge-open-sesame/actions) [![npm Download Total](https://flat.badgen.net/npm/dt/homebridge-open-sesame?icon=npm)](https://www.npmjs.com/package/homebridge-open-sesame)
 
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+
+
 Homebridge plugin for SESAME3 and SESAME BOT.
 
 </span>
