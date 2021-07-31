@@ -9,8 +9,17 @@ services:
       - 8581:8581
     volumes:
       - type: bind
-        source: ./homebridge
-        target: /homebridge
+        source: ./homebridge/config.json
+        target: /homebridge/config.json
+      - type: bind
+        source: ./homebridge/package.json
+        target: /homebridge/package.json
+      - type: bind
+        source: ./homebridge/persist
+        target: /homebridge/persist
+      - type: volume
+        source: node_modules
+        target: /homebridge/node_modules
 
       # Development volumes
       - type: bind
@@ -22,3 +31,6 @@ services:
       - type: bind
         source: ./config.schema.json
         target: /homebridge/homebridge-open-sesame/config.schema.json
+
+volumes:
+  node_modules:
