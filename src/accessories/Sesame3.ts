@@ -98,17 +98,21 @@ export class Sesame3 {
   }
 
   private async setLockTargetState(value: CharacteristicValue) {
-    const logPrefix = this.sesame.name ?? this.sesame.uuid;
+    const deviceName = this.sesame.name ?? this.sesame.uuid;
 
     let cmd: number;
     switch (value) {
       case this.platform.Characteristic.LockCurrentState.SECURED:
-        this.platform.log.info(`[${logPrefix}] Setting to lock state...`);
         cmd = Command.lock;
+        this.platform.log.info(
+          `Sending request for ${deviceName} to API. cmd: locked(${cmd})`,
+        );
         break;
       case this.platform.Characteristic.LockCurrentState.UNSECURED:
-        this.platform.log.info(`[${logPrefix}] Setting to unlock state...`);
         cmd = Command.unlock;
+        this.platform.log.info(
+          `Sending request for ${deviceName} to API. cmd: unlocked(${cmd})`,
+        );
         break;
       default:
         return;
@@ -123,7 +127,8 @@ export class Sesame3 {
         await this.#client.postCmd(cmd, this.platform.config.name);
       });
     } catch (error) {
-      this.platform.log.error(`[${logPrefix}] ${error.message}`);
+      this.platform.log.error(`${deviceName} - ${error.message}`);
+      this.platform.log.debug(error);
 
       // Mark as jammed
       this.#lockService
@@ -147,7 +152,10 @@ export class Sesame3 {
       return;
     }
 
-    this.platform.log.info(this.sesame.uuid, ":", JSON.stringify(status));
+    const logPrefix = this.sesame.name ?? this.sesame.uuid;
+    this.platform.log.info(
+      `${logPrefix} - Current state: ${newLockState ? "Locked" : "Unlocked"}`,
+    );
 
     this.#lockState = newLockState;
     this.#batteryLevel = status.batteryPercentage;

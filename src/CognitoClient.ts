@@ -135,7 +135,7 @@ export class CognitoClient {
     });
 
     this.#connection.on("connect", () => {
-      this.log.info(`${this.#device.uuid}: mqtt connection is established`);
+      this.log.debug(`${this.#device.uuid}: mqtt connection is established`);
 
       const topic = `$aws/things/sesame2/shadow/name/${
         this.#device.uuid
@@ -152,13 +152,13 @@ export class CognitoClient {
         this.log.error(`${this.#device.uuid}: mqtt error:`, error);
       })
       .on("reconnect", async () => {
-        this.log.info(`${this.#device.uuid}: mqtt connection will reconnect`);
+        this.log.debug(`${this.#device.uuid}: mqtt connection will reconnect`);
 
         // Ensure to use not expired credential for mqtt reconnetion
         this.updateWebSocketCredentials();
       })
       .on("close", async () => {
-        this.log.info(`${this.#device.uuid}: mqtt connection is closed`);
+        this.log.debug(`${this.#device.uuid}: mqtt connection is closed`);
       });
   }
 
@@ -245,7 +245,7 @@ export class CognitoClient {
 
     // Update credential periodically
     this.#updateCredentialTimer = setTimeout(async () => {
-      this.log.debug("Renew aws credential timer fired");
+      this.log.debug("Renewing aws credential.");
       await this.updateWebSocketCredentials(true);
       this.setUpdateCredentialTimer();
     }, timeout);

@@ -85,6 +85,12 @@ export class SesameBot {
   }
 
   private async setOn(_: CharacteristicValue): Promise<void> {
+    const deviceName = this.bot.name ?? this.bot.uuid;
+
+    this.platform.log.info(
+      `Sending request for ${deviceName} to API. cmd: click(${Command.click})`,
+    );
+
     try {
       await this.#mutex.runExclusive(async () => {
         await this.#client.postCmd(Command.click, this.platform.config.name);
@@ -100,8 +106,8 @@ export class SesameBot {
         }, 3.5 * 1000);
       });
     } catch (error) {
-      const logPrefix = this.bot.name ?? this.bot.uuid;
-      this.platform.log.error(`[${logPrefix}] ${error.message}`);
+      this.platform.log.error(`${deviceName} - ${error.message}`);
+      this.platform.log.debug(error);
     }
   }
 
@@ -110,12 +116,18 @@ export class SesameBot {
   }
 
   private getStatusLowBattery(): CharacteristicValue {
-    return this.#batteryLevel < 20;
+    return this.#batteryCritical;
   }
 
   private setSwitchStatus(status: CHSesame2MechStatus): void {
-    // Update lock service
     this.#on = status.isInLockRange;
+
+    const logPrefix = this.bot.name ?? this.bot.uuid;
+    this.platform.log.info(
+      `${logPrefix} - Current state: ${this.getOn() ? "On" : "Off"}`,
+    );
+
+    // Update button service
     this.#switchService
       .getCharacteristic(this.platform.Characteristic.On)
       .updateValue(this.getOn());
