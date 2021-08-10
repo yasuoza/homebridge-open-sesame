@@ -98,12 +98,16 @@ export class Sesame3 {
   }
 
   private async setLockTargetState(value: CharacteristicValue) {
+    const logPrefix = this.sesame.name ?? this.sesame.uuid;
+
     let cmd: number;
     switch (value) {
       case this.platform.Characteristic.LockCurrentState.SECURED:
+        this.platform.log.info(`[${logPrefix}] Setting to lock state...`);
         cmd = Command.lock;
         break;
       case this.platform.Characteristic.LockCurrentState.UNSECURED:
+        this.platform.log.info(`[${logPrefix}] Setting to unlock state...`);
         cmd = Command.unlock;
         break;
       default:
@@ -119,7 +123,6 @@ export class Sesame3 {
         await this.#client.postCmd(cmd, this.platform.config.name);
       });
     } catch (error) {
-      const logPrefix = this.sesame.name ?? this.sesame.uuid;
       this.platform.log.error(`[${logPrefix}] ${error.message}`);
 
       // Mark as jammed
