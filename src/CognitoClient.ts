@@ -241,7 +241,7 @@ export class CognitoClient {
     const now = new Date().getTime();
     const expire =
       this.#credential.Expiration?.getTime() ?? now + 60 * 60 * 1000;
-    const timeout = expire - now - 150 * 1000;
+    const timeout = Math.max(expire - now - 150 * 1000, 5 * 1000);
 
     // Update credential periodically
     this.#updateCredentialTimer = setTimeout(async () => {
