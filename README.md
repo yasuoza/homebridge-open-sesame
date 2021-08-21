@@ -13,7 +13,7 @@
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 
-Homebridge plugin for SESAME3 and SESAME BOT.
+Homebridge plugin for SESAME3 and SESAME bot.
 
 </span>
 
