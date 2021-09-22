@@ -106,8 +106,10 @@ export class SesameBot {
         }, 3.5 * 1000);
       });
     } catch (error) {
-      this.platform.log.error(`${deviceName} - ${error.message}`);
-      this.platform.log.debug(error);
+      if (error instanceof Error) {
+        this.platform.log.error(`${deviceName} - ${error.message}`);
+      }
+      this.platform.log.debug(`${error}`);
     }
   }
 

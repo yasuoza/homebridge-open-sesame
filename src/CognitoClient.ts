@@ -228,7 +228,7 @@ export class CognitoClient {
       this.#credential = (await cognitoClient.send(credCommand)).Credentials!;
     } catch (e) {
       this.log.error("Failed to authenticate.");
-      this.log.debug(e);
+      this.log.debug(`${e}`);
     }
   }
 
