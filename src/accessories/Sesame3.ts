@@ -126,7 +126,7 @@ export class Sesame3 {
 
         await this.#client.postCmd(cmd, this.platform.config.name);
       });
-    } catch (error) {
+    } catch (error: any) {
       this.platform.log.error(`${deviceName} - ${error.message}`);
       this.platform.log.debug(error);
 
