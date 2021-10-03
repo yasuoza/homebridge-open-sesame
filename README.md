@@ -13,7 +13,7 @@
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 
-Homebridge plugin for SESAME3 and SESAME bot.
+Homebridge plugin for SESAME3, SESAME４and SESAME bot.
 
 </span>
 
@@ -49,7 +49,7 @@ Configure with [Homebridge Config UI X](https://github.com/oznu/homebridge-confi
       "clientID": "CLIENT_ID from candyhouse developer site",
       "locks": [
         {
-          "name": "SESAME3 name",
+          "name": "SESAME4 name",
           "uuid": "UUID from Sesame.app",
           "secret": "Key Secret"
         }
