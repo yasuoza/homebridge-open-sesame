@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Open Sesame",
   "name": "homebridge-open-sesame",
-  "version": "0.3.14",
+  "version": "0.3.15",
   "description": "Homebridge plugin for sesame locks.",
   "license": "MIT",
   "repository": {
