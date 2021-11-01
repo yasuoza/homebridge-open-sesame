@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Open Sesame",
   "name": "homebridge-open-sesame",
-  "version": "0.3.15",
+  "version": "0.4.0-beta.0",
   "description": "Homebridge plugin for sesame locks.",
   "license": "MIT",
   "repository": {
@@ -39,7 +39,7 @@
     "async-mutex": "^0.3.1",
     "aws-iot-device-sdk": "^2.2.8",
     "aws4-axios": "^2.3.4",
-    "axios": "^0.22.0",
+    "axios": "^0.24.0",
     "node-aes-cmac": "^0.1.1",
     "uuid": "^8.3.2"
   },
