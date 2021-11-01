@@ -116,7 +116,7 @@ export class Sesame3 {
     return this.#lockState;
   }
 
-  private get candyClientMode(): boolean {
+  private get isWebAPIMode(): boolean {
     return this.#client instanceof CandyClient;
   }
 
@@ -153,7 +153,7 @@ export class Sesame3 {
         // Updating status will be done by mqtt subscription.
         // While CandyClient delays until next updateStatus occurs.
         // So, update status for CandyClient only.
-        if (this.candyClientMode) {
+        if (this.isWebAPIMode) {
           // Adjust update timing
           await Util.sleep(2.5 * 1000);
 
