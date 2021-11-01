@@ -3,7 +3,10 @@ module.exports = {
   trailingComma: "all",
   importOrder: ["^@core/(.*)$", "^[./]"],
   importOrderSeparation: true,
-  experimentalBabelParserPluginsList: [
+  importOrderParserPlugins: [
+    "classProperties",
     "classPrivateProperties",
+    "classPrivateMethods",
+    "typescript",
   ]
 };
