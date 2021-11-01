@@ -6,7 +6,9 @@ import {
   CharacteristicValue,
 } from "homebridge";
 
+import { CandyClient } from "../CandyClient";
 import { CognitoClient } from "../CognitoClient";
+import { Client } from "../interfaces/Client";
 import { OpenSesame } from "../platform";
 import { PLATFORM_NAME } from "../settings";
 import { CHSesame2MechStatus } from "../types/API";
@@ -14,7 +16,7 @@ import { Command } from "../types/Command";
 import { CHDevice } from "../types/Device";
 
 export class SesameBot {
-  readonly #client: CognitoClient;
+  readonly #client: Client;
   readonly #mutex: Mutex;
 
   readonly #switchService: Service;
@@ -29,13 +31,29 @@ export class SesameBot {
     private readonly accessory: PlatformAccessory,
     private readonly bot: CHDevice,
   ) {
-    this.#client = new CognitoClient(
-      SesameBot,
-      this.bot,
-      this.platform.config.apiKey,
-      this.platform.config.clientID,
-      this.platform.log,
-    );
+    if (
+      typeof this.platform.config.clientID != "undefined" &&
+      this.platform.config.clientID != ""
+    ) {
+      this.platform.log.debug("CLIENT_ID is deteted. Using CognitoClient");
+
+      this.#client = new CognitoClient(
+        SesameBot,
+        this.bot,
+        this.platform.config.apiKey,
+        this.platform.config.clientID,
+        this.platform.log,
+      );
+    } else {
+      this.platform.log.debug("CLIENT_ID is not deteted. Using CandyClient");
+
+      this.#client = new CandyClient(
+        this.bot,
+        this.platform.config.apiKey,
+        this.platform.config.interval ?? 60 * 60,
+        this.platform.log,
+      );
+    }
 
     this.platform.api.on(APIEvent.SHUTDOWN, () => {
       this.#client.shutdown();

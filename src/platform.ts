@@ -41,6 +41,7 @@ export class OpenSesame implements DynamicPlatformPlugin {
         ...config,
         apiKey: "",
         clientID: "",
+        interval: 60 * 60 * 1000,
         locks: [],
         bots: [],
       };
@@ -90,7 +91,7 @@ export class OpenSesame implements DynamicPlatformPlugin {
   private verifyConfig(
     config: PlatformConfig | OpenSesamePlatformConfig,
   ): config is OpenSesamePlatformConfig {
-    if (!["apiKey", "clientID"].every((key: string) => key in config)) {
+    if (!["apiKey"].every((key: string) => key in config)) {
       return false;
     }
 

@@ -2,7 +2,16 @@ import { Sesame3 } from "./accessories/Sesame3";
 import { SesameBot } from "./accessories/SesameBot";
 import { CHSesame2MechStatus } from "./types/API";
 
-export function convertToSesame2MechStatus(
+/** Sleep function
+- * @example
+- * // sleeps 3 seconds
+- * await sleep(3000);
+- */
+function sleep(msec: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, msec));
+}
+
+function convertToSesame2MechStatus(
   deviceType: typeof Sesame3 | typeof SesameBot,
   mechst: string,
 ): CHSesame2MechStatus {
@@ -53,9 +62,12 @@ export function convertToSesame2MechStatus(
     batteryPercentage: percentage,
     batteryVoltage: voltage,
     isBatteryCritical: (data[7] & 32) > 0,
+    CHSesame2Status: undefined,
     isInLockRange: (data[7] & 2) > 0,
     isInUnlockRange: (data[7] & 4) > 0,
     position: position,
     target: target,
   };
 }
+
+export { sleep, convertToSesame2MechStatus };

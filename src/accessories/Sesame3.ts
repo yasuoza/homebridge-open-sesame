@@ -6,7 +6,10 @@ import {
   CharacteristicValue,
 } from "homebridge";
 
+import { CandyClient } from "../CandyClient";
 import { CognitoClient } from "../CognitoClient";
+import * as Util from "../Util";
+import { Client } from "../interfaces/Client";
 import { OpenSesame } from "../platform";
 import { PLATFORM_NAME } from "../settings";
 import { CHSesame2MechStatus } from "../types/API";
@@ -14,7 +17,7 @@ import { Command } from "../types/Command";
 import { CHDevice } from "../types/Device";
 
 export class Sesame3 {
-  readonly #client: CognitoClient;
+  readonly #client: Client;
   readonly #mutex: Mutex;
 
   readonly #lockService: Service;
@@ -29,13 +32,29 @@ export class Sesame3 {
     private readonly accessory: PlatformAccessory,
     private readonly sesame: CHDevice,
   ) {
-    this.#client = new CognitoClient(
-      Sesame3,
-      this.sesame,
-      this.platform.config.apiKey,
-      this.platform.config.clientID,
-      this.platform.log,
-    );
+    if (
+      typeof this.platform.config.clientID != "undefined" &&
+      this.platform.config.clientID != ""
+    ) {
+      this.platform.log.debug("CLIENT_ID is deteted. Using CognitoClient");
+
+      this.#client = new CognitoClient(
+        Sesame3,
+        this.sesame,
+        this.platform.config.apiKey,
+        this.platform.config.clientID,
+        this.platform.log,
+      );
+    } else {
+      this.platform.log.debug("CLIENT_ID is not deteted. Using CandyClient");
+
+      this.#client = new CandyClient(
+        this.sesame,
+        this.platform.config.apiKey,
+        this.platform.config.interval ?? 60 * 60,
+        this.platform.log,
+      );
+    }
 
     this.platform.api.on(APIEvent.SHUTDOWN, () => {
       this.#client.shutdown();
@@ -97,6 +116,10 @@ export class Sesame3 {
     return this.#lockState;
   }
 
+  private get candyClientMode(): boolean {
+    return this.#client instanceof CandyClient;
+  }
+
   private async setLockTargetState(value: CharacteristicValue) {
     const deviceName = this.sesame.name ?? this.sesame.uuid;
 
@@ -125,6 +148,18 @@ export class Sesame3 {
           .updateValue(value);
 
         await this.#client.postCmd(cmd, this.platform.config.name);
+
+        // Using CognitoClient, we don't need update manually.
+        // Updating status will be done by mqtt subscription.
+        // While CandyClient delays until next updateStatus occurs.
+        // So, update status for CandyClient only.
+        if (this.candyClientMode) {
+          // Adjust update timing
+          await Util.sleep(2.5 * 1000);
+
+          // Update state
+          this.updateToLatestStatus();
+        }
       });
     } catch (error) {
       if (error instanceof Error) {

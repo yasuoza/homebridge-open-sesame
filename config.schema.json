@@ -20,9 +20,16 @@
     },
     "clientID": {
       "title": "Client ID",
-      "description": "CLIENT_ID at https://dash.candyhouse.co",
+      "description": "CLIENT_ID at https://dash.candyhouse.co. Leave blank when you don't have CLIENT_ID.",
       "type": "string",
-      "required": true
+      "required": false
+    },
+    "interval": {
+      "title": "Status update interval(second)",
+      "description": "Status update interval used only when CLIENT_ID is empty",
+      "type": "number",
+      "default": 3600000,
+      "required": false
     },
     "locks": {
       "title": "Sesame Locks",
@@ -88,7 +95,8 @@
       "items": [
         "name",
         "apiKey",
-        "clientID"
+        "clientID",
+        "interval"
       ]
     },
     {

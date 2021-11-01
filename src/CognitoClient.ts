@@ -15,6 +15,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as Util from "./Util";
 import { Sesame3 } from "./accessories/Sesame3";
 import { SesameBot } from "./accessories/SesameBot";
+import { Client } from "./interfaces/Client";
 import { CHSesame2MechStatus } from "./types/API";
 import { Command } from "./types/Command";
 import { CHDevice } from "./types/Device";
@@ -23,7 +24,7 @@ const APIGW_URL =
   "https://jhcr1i3ecb.execute-api.ap-northeast-1.amazonaws.com/prod";
 const IOT_EP = "a3i4hui4gxwoo8-ats.iot.ap-northeast-1.amazonaws.com";
 
-export class CognitoClient {
+export class CognitoClient implements Client {
   readonly #device: CHDevice;
   readonly #deviceType: typeof Sesame3 | typeof SesameBot;
   readonly #apiKey: string;
