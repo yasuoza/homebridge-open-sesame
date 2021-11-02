@@ -1,0 +1,20 @@
+{
+  "extends": [
+    "config:base"
+  ],
+  "timezone": "Asia/Tokyo",
+  "prConcurrentLimit": 5,
+  "enabledManagers": [
+    "github-actions",
+    "npm"
+  ],
+  "pin": {
+    "automerge": true
+  },
+  "minor": {
+    "automerge": true
+  },
+  "patch": {
+    "automerge": true
+  }
+}
