@@ -18,6 +18,8 @@ import {
 } from "./settings";
 import { CHDevice } from "./types/Device";
 
+const CLIENT_ID = "ap-northeast-1:0a1820f1-dbb3-4bca-9227-2a92f6abf0ae";
+
 export class OpenSesame implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic =
@@ -49,6 +51,7 @@ export class OpenSesame implements DynamicPlatformPlugin {
     }
 
     this.config = config;
+    this.config.clientID = config.clientID ? config.clientID : CLIENT_ID;
 
     this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
       this.log.debug("Executed didFinishLaunching callback");
