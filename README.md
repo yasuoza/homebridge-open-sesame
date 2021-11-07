@@ -46,7 +46,6 @@ Configure with [Homebridge Config UI X](https://github.com/oznu/homebridge-confi
       "platform": "OpenSesame",
       "name": "Open Sesame",
       "apiKey": "API_KEY from candyhouse developer site",
-      "clientID": "CLIENT_ID from candyhouse developer site",
       "locks": [
         {
           "name": "SESAME4 name",
