@@ -77,17 +77,23 @@ export class CognitoClient implements Client {
       },
     );
     client.interceptors.request.use(interceptor);
-    const res = await client.get<{
-      state: { reported: { mechst: string } };
-    }>(`https://${IOT_EP}/things/sesame2/shadow?name=${this.#device.uuid}`);
+    try {
+      const res = await client.get<{
+        state: { reported: { mechst: string } };
+      }>(`https://${IOT_EP}/things/sesame2/shadow?name=${this.#device.uuid}`);
 
-    const status = Util.convertToSesame2MechStatus(
-      this.#deviceType,
-      res.data.state.reported.mechst,
-    );
-    this.log.debug(`${this.#device.uuid}:`, JSON.stringify(status));
+      const status = Util.convertToSesame2MechStatus(
+        this.#deviceType,
+        res.data.state.reported.mechst,
+      );
+      this.log.debug(`${this.#device.uuid}:`, JSON.stringify(status));
 
-    return status;
+      return status;
+    } catch (e) {
+      this.log.error("Failed to getMechStatus.");
+      this.log.debug(`${e}`);
+      return;
+    }
   }
 
   async subscribe(
