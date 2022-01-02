@@ -16,5 +16,12 @@
   },
   "patch": {
     "automerge": true
-  }
+  },
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["axios"],
+      "groupName": "axios packages",
+      "automerge": false,
+    }
+  ],
 }
