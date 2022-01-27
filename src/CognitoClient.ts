@@ -163,6 +163,13 @@ export class CognitoClient implements Client {
 
         // Ensure to use not expired credential for mqtt reconnetion
         this.updateWebSocketCredentials();
+
+        // Refresh status for the case when lock/unlock cmd is triggered just before mqtt reconnection
+        const status = await this.getMechStatus();
+        if (!status) {
+          return;
+        }
+        callback(status);
       })
       .on("close", async () => {
         this.log.debug(`${this.#device.uuid}: mqtt connection is closed`);
