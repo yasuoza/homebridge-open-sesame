@@ -6,7 +6,7 @@
 
 # homebridge-open-sesame
 
-[![GitHub Release](https://flat.badgen.net/github/release/yasuoza/homebridge-open-sesame/master?icon=github)](https://github.com/yasuoza/homebridge-open-sesame/releases) [![npm Release](https://flat.badgen.net/npm/v/homebridge-open-sesame?icon=npm)](https://www.npmjs.com/package/homebridge-open-sesame)
+[![GitHub Release](https://flat.badgen.net/github/release/yasuoza/homebridge-open-sesame/main?icon=github)](https://github.com/yasuoza/homebridge-open-sesame/releases) [![npm Release](https://flat.badgen.net/npm/v/homebridge-open-sesame?icon=npm)](https://www.npmjs.com/package/homebridge-open-sesame)
 
 [![Lint & Build](https://flat.badgen.net/github/checks/yasuoza/homebridge-open-sesame/main?icon=github&label=lint%20%26%20build)](https://github.com/yasuoza/homebridge-open-sesame/actions) [![npm Download Total](https://flat.badgen.net/npm/dt/homebridge-open-sesame?icon=npm)](https://www.npmjs.com/package/homebridge-open-sesame)
 
