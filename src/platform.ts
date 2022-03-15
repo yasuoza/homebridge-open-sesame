@@ -33,8 +33,6 @@ export class OpenSesame implements DynamicPlatformPlugin {
     config: PlatformConfig,
     public readonly api: API,
   ) {
-    this.log.debug("Finished initializing platform:", config.name);
-
     if (!this.verifyConfig(config)) {
       this.log.debug("Invalid configuration. Please check your configuration.");
 
@@ -46,11 +44,22 @@ export class OpenSesame implements DynamicPlatformPlugin {
         interval: 60 * 60 * 1000,
         locks: [],
         bots: [],
+        debug: false,
       };
       return;
     }
 
     this.config = config;
+    this.log = this.config.debug
+      ? Object.assign(Object.create(log), {
+          debug: (message: string, ...parameters: unknown[]) => {
+            this.log.info(`[DEBUG]: ${message}`, ...parameters);
+          },
+        })
+      : log;
+
+    this.log.debug("Finished initializing platform:", config.name);
+
     this.config.clientID = config.clientID ? config.clientID : CLIENT_ID;
 
     this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {

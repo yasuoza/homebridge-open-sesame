@@ -10,6 +10,12 @@
       "default": "Open Sesame",
       "required": true
     },
+    "debug": {
+      "type": "boolean",
+      "title": "Debug logging",
+      "required": false,
+      "default": false
+    },
     "apiKey": {
       "title": "API Key",
       "type": "string",

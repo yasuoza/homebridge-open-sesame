@@ -19,4 +19,6 @@ export interface OpenSesamePlatformConfig extends PlatformConfig {
   interval: number | undefined;
   locks: Array<CHDevice> | undefined;
   bots: Array<CHDevice> | undefined;
+
+  debug: boolean | undefined;
 }
