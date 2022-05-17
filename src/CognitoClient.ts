@@ -20,8 +20,6 @@ import { CHSesame2MechStatus } from "./types/API";
 import { Command } from "./types/Command";
 import { CHDevice } from "./types/Device";
 
-const APIGW_URL =
-  "https://jhcr1i3ecb.execute-api.ap-northeast-1.amazonaws.com/prod";
 const IOT_EP = "a3i4hui4gxwoo8-ats.iot.ap-northeast-1.amazonaws.com";
 
 export class CognitoClient implements Client {
@@ -177,38 +175,24 @@ export class CognitoClient implements Client {
   }
 
   async postCmd(cmd: Command, historyName?: string): Promise<boolean> {
-    this.log.debug(`POST /device/v1/iot/sesame2/${this.#device.uuid}`);
+    const url = `https://app.candyhouse.co/api/sesame2/${
+      this.#device.uuid
+    }/cmd`;
 
-    if (this.credentialExpired) {
-      await this.authenticate();
-    }
+    this.log.debug(`POST ${url}`);
 
-    const instance = axios.create({
-      headers: { "x-api-key": this.#apiKey },
-    });
-    instance.interceptors.request.use(
-      aws4Interceptor(
-        {
-          region: "ap-northeast-1",
-          service: "execute-api",
-        },
-        {
-          accessKeyId: this.#credential.AccessKeyId!,
-          secretAccessKey: this.#credential.SecretKey!,
-          sessionToken: this.#credential.SessionToken!,
-        },
-      ),
-    );
-
-    const url = `${APIGW_URL}/device/v1/iot/sesame2/${this.#device.uuid}`;
     const history = historyName ?? "Homebridge";
     const base64_history = Buffer.from(history).toString("base64");
-    const sign = this.generateRandomTag(this.#device.secret).slice(0, 8);
-    const res = await instance.post(url, {
-      cmd: cmd,
-      history: base64_history,
-      sign: sign,
-    });
+    const sign = this.generateRandomTag(this.#device.secret);
+    const res = await axios.post(
+      url,
+      {
+        cmd: cmd,
+        history: base64_history,
+        sign: sign,
+      },
+      { headers: { "x-api-key": this.#apiKey } },
+    );
 
     return res.status === 200;
   }
