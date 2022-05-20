@@ -6,8 +6,8 @@ import {
   PlatformConfig,
   Service,
   Characteristic,
+  Logger,
 } from "homebridge";
-import { Logger } from "homebridge/lib/logger";
 
 import { Sesame3 } from "./accessories/Sesame3";
 import { SesameBot } from "./accessories/SesameBot";
@@ -51,9 +51,13 @@ export class OpenSesame implements DynamicPlatformPlugin {
 
     this.config = config;
 
-    Logger.forceColor();
-    Logger.setDebugEnabled(this.config.debug);
-    this.log = new Logger(log.prefix);
+    if (this.config.debug) {
+      /* eslint @typescript-eslint/no-var-requires: 0 */
+      const DebugLogger = require("homebridge/lib/logger").Logger;
+      DebugLogger.forceColor();
+      DebugLogger.setDebugEnabled(this.config.debug);
+      this.log = new DebugLogger(log.prefix);
+    }
 
     this.log.debug("Finished initializing platform:", config.name);
 
