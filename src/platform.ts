@@ -52,11 +52,19 @@ export class OpenSesame implements DynamicPlatformPlugin {
     this.config = config;
 
     if (this.config.debug) {
-      /* eslint @typescript-eslint/no-var-requires: 0 */
-      const DebugLogger = require("homebridge/lib/logger").Logger;
-      DebugLogger.forceColor();
-      DebugLogger.setDebugEnabled(this.config.debug);
-      this.log = new DebugLogger(log.prefix);
+      try {
+        /* eslint @typescript-eslint/no-var-requires: 0 */
+        const DebugLogger = require("homebridge/lib/logger").Logger;
+        DebugLogger.forceColor();
+        DebugLogger.setDebugEnabled(this.config.debug);
+        this.log = new DebugLogger(log.prefix);
+      } catch (e) {
+        this.log.error(
+          `Failed to load homebridge/lib/logger.
+          npm install homebridge@latest may resolve the error`,
+        );
+        this.log.debug(`${e}`);
+      }
     }
 
     this.log.debug("Finished initializing platform:", config.name);
