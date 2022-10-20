@@ -44,7 +44,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@trivago/prettier-plugin-sort-imports": "3.3.1",
+    "@trivago/prettier-plugin-sort-imports": "3.4.0",
     "@types/aws-iot-device-sdk": "2.2.4",
     "@types/jest": "27.5.2",
     "@types/node": "16.11.68",
