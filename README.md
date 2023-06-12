@@ -13,7 +13,7 @@
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 
-Homebridge plugin for SESAME3, SESAME４and SESAME bot.
+Homebridge plugin for SESAME3, SESAME4, SESAME5 and SESAME bot.
 
 </span>
 
@@ -21,7 +21,7 @@ Homebridge plugin for SESAME3, SESAME４and SESAME bot.
 
 - Real time status update support(even when manual lock/unlock).
 - No status polling(`Limit Exceeded` avoidance)
-- SESAME bot support.
+- SESAME bot and SESAME5 support.
 
 ## Install
 
