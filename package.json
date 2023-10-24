@@ -46,7 +46,7 @@
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "4.1.1",
     "@types/aws-iot-device-sdk": "2.2.7",
-    "@types/jest": "29.5.2",
+    "@types/jest": "29.5.6",
     "@types/node": "16.18.59",
     "@types/uuid": "9.0.6",
     "@typescript-eslint/eslint-plugin": "5.61.0",
@@ -54,7 +54,7 @@
     "eslint": "8.44.0",
     "eslint-config-prettier": "8.8.0",
     "homebridge": "1.6.1",
-    "jest": "29.6.0",
+    "jest": "29.7.0",
     "nodemon": "2.0.22",
     "prettier": "2.8.8",
     "release-it": "15.11.0",
