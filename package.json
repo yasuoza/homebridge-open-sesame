@@ -48,7 +48,7 @@
     "@types/aws-iot-device-sdk": "2.2.7",
     "@types/jest": "29.5.2",
     "@types/node": "16.18.59",
-    "@types/uuid": "9.0.2",
+    "@types/uuid": "9.0.6",
     "@typescript-eslint/eslint-plugin": "5.61.0",
     "@typescript-eslint/parser": "5.61.0",
     "eslint": "8.44.0",
