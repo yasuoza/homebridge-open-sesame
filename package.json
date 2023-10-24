@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "4.1.1",
-    "@types/aws-iot-device-sdk": "2.2.4",
+    "@types/aws-iot-device-sdk": "2.2.7",
     "@types/jest": "29.5.2",
     "@types/node": "16.18.38",
     "@types/uuid": "9.0.2",
