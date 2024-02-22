@@ -39,7 +39,7 @@
     "async-mutex": "^0.4.0",
     "aws-iot-device-sdk": "^2.2.8",
     "aws4-axios": "^2.4.9",
-    "axios": "^0.27.2",
+    "axios": "^0.28.0",
     "node-aes-cmac": "^0.1.1",
     "uuid": "^9.0.0"
   },
