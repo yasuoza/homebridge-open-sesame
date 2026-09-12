@@ -47,7 +47,7 @@
     "@trivago/prettier-plugin-sort-imports": "4.2.1",
     "@types/aws-iot-device-sdk": "2.2.7",
     "@types/jest": "29.5.6",
-    "@types/node": "16.18.59",
+    "@types/node": "16.18.126",
     "@types/uuid": "9.0.6",
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
